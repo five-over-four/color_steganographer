@@ -7,7 +7,7 @@ Each message begins and ends with an alternating sequence of 24 1s and 0s; 10101
 
 Encode your message into `image.png` with the command `python steno.py image.png -e "this is my message."` or from a file `source.txt` by using `python steno.py image.png -i source.txt`
 
-Decode such a message from `encoded.png` with the command `python steno.py encoded.png -d"`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python steno.py encoded.png -d > target.txt`.
+Decode such a message from `encoded.png` with the command `python steno.py encoded.png -d`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python steno.py encoded.png -d > target.txt`.
 
 ## Help
     usage: Simple Binary Stenography Tool [-h] [-i TEXTFILE] [-e [MESSAGE]] [-d] filename
