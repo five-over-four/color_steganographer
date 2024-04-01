@@ -127,7 +127,7 @@ def replace_pixel(pixel, new_val, ch):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-                    prog="Simple Binary Stenography Tool", 
+                    prog="Simple Binary Steganography Tool", 
                     description="Encode and decode a message into and from the colour channels\nof an image.",
                     epilog="")
     
