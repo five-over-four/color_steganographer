@@ -1,4 +1,4 @@
-# Channel Steganographer
+# Colour Steganographer
 This fun little tool will encode any message you write into the three
 colour channels of any image of your choosing. It will do this by altering the
 parity of that channels' colour codes, in order of red, green, blue. An even number corresponds with a 0 and an odd one with 1.
