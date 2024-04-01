@@ -24,3 +24,10 @@ Decode such a message from `encoded.png` with the command `python steno.py encod
     -e [MESSAGE], --encode [MESSAGE]
                             encode a message into the image file.
     -d, --decode          read a message from the image file.
+
+## Space considerations
+As each pixel can contain 3 bits of information and the starting sequence takes up 24 bits (end sequence can be omitted), the maximum number of characters you can encode into an image of size width * height is `(width * height * 3)/8 - 24`, rounded down.
+
+For instance, a 400 x 400 image can hold (400 * 400 * 3)/8 - 24 = 59976 characters, or about 60 kilobytes of information.
+
+Note that compressing the image after encoding will likely destroy the encoded information.
