@@ -141,8 +141,6 @@ if __name__ == "__main__":
     img = image.load()
     width, height = image.size
 
-    print(args)
-
     if args.decode:
         print(decode_message(img))
     elif args.input:

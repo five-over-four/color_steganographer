@@ -31,3 +31,10 @@ As each pixel can contain 3 bits of information and the starting sequence takes 
 For instance, a 400 x 400 image can hold (400 * 400 * 3)/8 - 24 = 59976 characters, or about 60 kilobytes of information.
 
 Note that compressing the image after encoding will likely destroy the encoded information.
+
+## Included example
+I've encoded something into the `example_encoded.png` that you can test the program on. Simply run
+
+`python steno.py example_encoded.png -d > result.txt`
+
+to see what it is.
