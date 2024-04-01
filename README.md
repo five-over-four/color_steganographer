@@ -1,33 +1,26 @@
 # Channel Stenographer
-This fun little tool will encode any message you write into one of the three
+This fun little tool will encode any message you write into the three
 colour channels of any image of your choosing. It will do this by altering the
-parity of that channel's colour code. An even number corresponds with a 0 and an odd one with 1.
+parity of that channels' colour codes, in order of red, green, blue. An even number corresponds with a 0 and an odd one with 1.
 
 Each message begins and ends with an alternating sequence of 24 1s and 0s; 10101010...
 
-Encode `image.png` into the channel `colour` with the command `python steno.py image.png -e "this is my message." -c "colour"` with an optional channel flag `-c` (default is red) taking arguments "red", "green", and "blue".
+Encode your message into `image.png` with the command `python steno.py image.png -e "this is my message."` or from a file `source.txt` by using `python steno.py image.png -i "source.txt"`
 
-Decode such a message from `encoded.png` from the channel `colour` with the command `python steno.py encoded.png -d -c "colour"`
+Decode such a message from `encoded.png` with the command `python steno.py encoded.png -d"`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python steno.py encoded.png -d > target.txt`.
 
 ## Help
-    usage: Simple Binary Stenography Tool [-h] [-e MESSAGE] [-d] [-c COLOUR] [-s] filename
+    usage: Simple Binary Stenography Tool [-h] [-i TEXTFILE] [-e [MESSAGE]] [-d] filename
 
-    Encode and decode a message into and from one of the colour channels of an image.     
+    Encode and decode a message into and from the colour channels of an image.
 
     positional arguments:
     filename              name of the image file.
 
     options:
     -h, --help            show this help message and exit
-    -e MESSAGE, --encode MESSAGE
+    -i TEXTFILE, --input TEXTFILE
+                            encode the contents of a text file into the image.
+    -e [MESSAGE], --encode [MESSAGE]
                             encode a message into the image file.
     -d, --decode          read a message from the image file.
-    -c COLOUR, --channel COLOUR
-                            red/green/blue
-    -s, --scramble        remove any message from given channel.
-
-## TODO
-
-* I'll add an optional padding flag that will allow you to begin a message at an arbitrary position in the image.
-
-* Perhaps some more complex methods of staggering the bits, but I may not do this.
