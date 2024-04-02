@@ -123,6 +123,24 @@ def replace_pixel(pixel, new_val, ch):
         return (r, new_val, b)
     else:
         return (r, g, new_val)
+    
+def analyze_file(img):
+    """
+    Gives some heuristic constraints for how much data can be encoded
+    within the image file.
+    """
+    from math import floor
+    from decimal import Decimal, ROUND_UP
+
+    max_size = floor(width*height*3/8)-24
+
+    # Python rounds 7.955 to 7.95 instead of 7.96.
+    def round_proper(val):
+        return Decimal(str(val)).quantize(Decimal('.01'), rounding=ROUND_UP)
+    
+    return f"The image resolution is {width} x {height}.\n" \
+            f"Maximum stored characters: {max_size} or {round_proper(max_size/1000)}kB\n" \
+            f"Roughly {floor(max_size/6)} words or {round_proper(max_size/(6*280))} pages for a book with 280 words per page."
 
 
 if __name__ == "__main__":
@@ -133,8 +151,9 @@ if __name__ == "__main__":
     
     parser.add_argument("filename", help="name of the image file.")
     parser.add_argument("-i", "--input", metavar="TEXTFILE", help="encode the contents of a text file into the image.")
-    parser.add_argument("-e", "--encode", metavar="MESSAGE", nargs="?", help="encode a message into the image file.")
+    parser.add_argument("-e", "--encode", metavar="MESSAGE", nargs=1, help="encode a message into the image file.")
     parser.add_argument("-d", "--decode", action="store_true", help="read a message from the image file.")
+    parser.add_argument("-a", "--analyze", action="store_true", help="gives storage constraints for the image.")
     args = parser.parse_args()
     
     image = Image.open(args.filename).convert("RGB")
@@ -151,3 +170,5 @@ if __name__ == "__main__":
     elif args.encode:
         encode_message(img, args.encode)
         image.save("encoded.png")
+    elif args.analyze:
+        print(analyze_file(img))

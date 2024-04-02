@@ -10,7 +10,7 @@ Encode your message into `image.png` with the command `python stegano.py image.p
 Decode such a message from `encoded.png` with the command `python stegano.py encoded.png -d`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python stegano.py encoded.png -d > target.txt`.
 
 ## Help
-    usage: Simple Binary Steganography Tool [-h] [-i TEXTFILE] [-e [MESSAGE]] [-d] filename
+    usage: Simple Binary Steganography Tool [-h] [-i TEXTFILE] [-e MESSAGE] [-d] [-a] filename
 
     Encode and decode a message into and from the colour channels of an image.
 
@@ -21,9 +21,10 @@ Decode such a message from `encoded.png` with the command `python stegano.py enc
     -h, --help            show this help message and exit
     -i TEXTFILE, --input TEXTFILE
                             encode the contents of a text file into the image.
-    -e [MESSAGE], --encode [MESSAGE]
+    -e MESSAGE, --encode MESSAGE
                             encode a message into the image file.
     -d, --decode          read a message from the image file.
+    -a, --analyze         gives storage constraints for the image.
 
 ## Space considerations
 As each pixel can contain 3 bits of information and the starting sequence takes up 24 bits (end sequence can be omitted), the maximum number of characters you can encode into an image of size width * height is `(width * height * 3)/8 - 24`, rounded down.
