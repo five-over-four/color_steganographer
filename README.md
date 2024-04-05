@@ -7,6 +7,8 @@ Encode your message into `image.png` with the command `python stegano.py image.p
 
 Decode such a message from `encoded.png` with the command `python stegano.py encoded.png -d`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python stegano.py encoded.png -d > target.txt`.
 
+If you do not know whether a message has been hidden in the image using this tool, use the `-c` or `--check` flag. Simply run `python stegano.py image.png -c`.
+
 ## Encoding tweaks
 To use more bits of each colour for the message, use the `-b` or `--bitlevel` flag, with numbers 1-8, 1 being the least bits (most discreet) and 8 being the most extreme (0 bits for colour information!). To skip all but every Nth pixel (up -> down, then left -> right), use the `-s` or `--skipping` flag.
 
@@ -15,7 +17,7 @@ For instance, to encode the file `source.txt` into `example.png`, storing 4 bits
 `python stegano.py -i source.txt -b 4 -s 3`
 
 ## Help
-    usage: Simple Binary Steganography Tool [-h] [-i TEXTFILE] [-t MESSAGE] [-b BITS_PER_PIXEL] [-s N] [-d] [-a] filename
+    usage: Simple Binary Steganography Tool [-h] [-i TEXTFILE] [-t MESSAGE] [-b BITS_PER_PIXEL] [-s N] [-d] [-a] [-c] filename
 
     Encode and decode a message into and from the colour channels of an image.
 
@@ -33,6 +35,7 @@ For instance, to encode the file `source.txt` into `example.png`, storing 4 bits
     -s N, --skipping N    Skip all but every Nth pixel in the encoding process.
     -d, --decode          Read a message from the image file.
     -a, --analyze         Gives storage constraints for the image.
+    -c, --check           Tries to automatically find an encoded message and its settings.
 
 ## Method of steganography used
 Each pixel in the image contains three colours, red, green, and blue. Their values range from 0 to 255 (2^8 values, 8 bits). By adjusting

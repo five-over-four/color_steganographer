@@ -172,6 +172,28 @@ def analyze_file():
     
     return storage_estimates()
 
+def check_for_data(img, skip_max=15):
+    """
+    This will check the image for a starting sequence in all possible combinations 
+    of bit_levels and skipping modes up to skip_max - 1. Will stop each time after 24
+    bits are found.
+    """
+    pos = 0
+    for bits in range(1,9):
+        bit_data = bit_combinations(bits)
+        for skip_level in range(1, skip_max):
+            pos = 0
+            b = ""
+            while len(b) < 24:
+                for ch in ("red", "green", "blue"):
+                    modulus = img[pos // height, pos % height][channels[ch]] % (2**bits)
+                    b += bit_data[modulus]
+                pos += skip_level
+            if len(b) >= 24 and b[:24] == "10"*12:
+                return f"Message detected with bit_level = {bits} and skipping {skip_level}."
+    return "No message found."
+                
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
                     prog="Simple Binary Steganography Tool", 
@@ -185,6 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--skipping", metavar="N", help="Skip all but every Nth pixel in the encoding process.")
     parser.add_argument("-d", "--decode", action="store_true", help="Read a message from the image file.")
     parser.add_argument("-a", "--analyze", action="store_true", help="Gives storage constraints for the image.")
+    parser.add_argument("-c", "--check", action="store_true", help="Tries to automatically find an encoded message and its settings.")
     argv = parser.parse_args()
     
     # just some global vars and validation. bit messy.
@@ -219,3 +242,5 @@ if __name__ == "__main__":
         image.save("encoded.png")
     elif argv.analyze:
         print(analyze_file())
+    elif argv.check:
+        print(check_for_data(img))
