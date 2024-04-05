@@ -191,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--input", metavar="TEXTFILE", help="Encode the contents of a text file into the image.")
     parser.add_argument("-t", "--typemessage", metavar="MESSAGE", help="Type directly to encode a message into the image file.")
     parser.add_argument("-b", "--bitlevel", metavar="BITS_PER_PIXEL", help="Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.")
-    parser.add_argument("-s", "--skipping", metavar="N", help="Skip all but every Nth pixel in the encoding process. 0 to populate the image evenly.")
+    parser.add_argument("-s", "--skipping", metavar="N", help="Skip all but every Nth pixel in the encoding process. 0 to populate the image evenly (default).")
     parser.add_argument("-d", "--decode", action="store_true", help="Read a message from the image file.")
     parser.add_argument("-m", "--manual", action="store_true", help="Decode with optional manual --bitlevel and --skipping flags (default to 1 and 1).")
     parser.add_argument("-a", "--analyze", action="store_true", help="Tries to automatically find an encoded message and its settings.")
@@ -226,7 +226,11 @@ if __name__ == "__main__":
         try:
             text = open(argv.input, "r").read()
             stripped = "".join((c for c in text if 0 < ord(c) < 255)) # stupid unicode.
-            skipping = calculate_skip(skip=argv.skipping, msg=stripped, bits=bit_level)
+            
+            if not argv.skipping:
+                skipping = calculate_skip(skip="0", msg=stripped, bits=bit_level)
+            else:
+                skipping = calculate_skip(skip=argv.skipping, msg=stripped, bits=bit_level)
             encode_message(img, stripped, bit_level, skipping)
             image.save("encoded.png")
             print(f"Encoded with bit_level = {bit_level} and skipping = {skipping}")
@@ -234,7 +238,10 @@ if __name__ == "__main__":
             print(f"Supplied text file '{argv.input}' not found.")
     
     elif argv.typemessage: # -t "this is a message i wish to encode." -b [bitlevel] -s [skipping]
-        skipping = calculate_skip(skip=argv.skipping, msg=argv.typemessage, bits=bit_level)
+        if not argv.skipping:
+            skipping = calculate_skip(skip="0", msg=argv.typemessage, bits=bit_level)
+        else:
+            skipping = calculate_skip(skip=argv.skipping, msg=argv.typemessage, bits=bit_level)
         encode_message(img, argv.typemessage, bit_level, skipping)
         image.save("encoded.png")
         print(f"Encoded with bit_level = {bit_level} and skipping = {skipping}")

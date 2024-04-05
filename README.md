@@ -8,7 +8,7 @@ Encode your message into `image.png` with the command `python stegano.py image.p
 Decode such a message from `encoded.png` with the command `python stegano.py encoded.png -d`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python stegano.py encoded.png -d > target.txt`.
 
 ## Encoding tweaks
-To use more bits of each colour for the message, use the `-b` or `--bitlevel` flag, with numbers 1-8, 1 being the least bits (most discreet) and 8 being the most extreme (0 bits for colour information!). To skip all but every Nth pixel (up -> down, then left -> right), use the `-s` or `--skipping` flag. `-s 0` causes the program to try to populate the image *evenly* with encoded pixels, more useful with shorter messages.
+To use more bits of each colour for the message, use the `-b` or `--bitlevel` flag, with numbers 1-8, 1 being the least bits (most discreet) and 8 being the most extreme (0 bits for colour information!). To skip all but every Nth pixel (up -> down, then left -> right), use the `-s` or `--skipping` flag. The `-s 0` flag is default functionality, attempting to spread the pixels evenly across the iamge. This can by bypassed with `-s N`.
 
 For instance, to encode the file `source.txt` into `example.png`, storing 4 bits per pixel, and skipping all but every 3rd pixel, you'd use the command
 
