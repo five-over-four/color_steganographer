@@ -199,11 +199,14 @@ if __name__ == "__main__":
     elif argv.decode:
         print(to_ascii(decode_message(img, bit_level)))
     elif argv.input:
-        text = open(argv.input, "r").read()
-        stripped = "".join((c for c in text if 0 < ord(c) < 255)) # stupid unicode.
-        encode_message(img, stripped, bit_level)
-        image.save("encoded.png")
-        print(f"Encoded with bit_level = {bit_level}")
+        try:
+            text = open(argv.input, "r").read()
+            stripped = "".join((c for c in text if 0 < ord(c) < 255)) # stupid unicode.
+            encode_message(img, stripped, bit_level)
+            image.save("encoded.png")
+            print(f"Encoded with bit_level = {bit_level}")
+        except FileNotFoundError:
+            print(f"Supplied text file {argv.input} not found.")
     elif argv.typemessage:
         encode_message(img, argv.typemessage, bit_level)
         image.save("encoded.png")
