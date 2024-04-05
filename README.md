@@ -14,7 +14,7 @@ For instance, to encode the file `source.txt` into `example.png`, storing 4 bits
 
 `python stegano.py -i source.txt -b 4 -s 3`.
 
-The program will attempt to automatically detect the message, but you can use the `-m` or `--manual` flag to give decoding instructions: `python stegano.py encoded.png -m -b 4 -s 3`.
+The program will attempt to automatically detect the message, but you can use the `-m` or `--manual` flag to give decoding instructions: `python stegano.py encoded.png -m -b 4 -s 3`. To encode in each subsequent pixel, just use `-s 1`.
 
 ## Help
     usage: Simple Binary Steganography Tool [-h] [-i TEXTFILE] [-t MESSAGE] [-b BITS_PER_PIXEL] [-s N] [-d] [-m] [-a] filename
