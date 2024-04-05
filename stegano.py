@@ -173,7 +173,15 @@ def analyze_file(img, skip_max=15, utility_mode=True):
                 return (bits, skip_level)
     print("No message found.")
     return (-1, -1)
-                
+
+def calculate_skip(skip: int, msg: str, bits: int):
+    """
+    If supplied with -s 0, calculates skipping number such that the message gets evenly
+    encoded across the image. Try it with -t "asdfasdfasdfasdfasdfasdfasdfasdfasdf" -b 8 -s 0.
+    """
+    if skip != "0": return int(skip)
+    from math import ceil
+    return max((height * width) // (ceil(len(msg) * 8 /(3 * bits))), 1)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -185,7 +193,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--input", metavar="TEXTFILE", help="Encode the contents of a text file into the image.")
     parser.add_argument("-t", "--typemessage", metavar="MESSAGE", help="Type directly to encode a message into the image file.")
     parser.add_argument("-b", "--bitlevel", metavar="BITS_PER_PIXEL", help="Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.")
-    parser.add_argument("-s", "--skipping", metavar="N", help="Skip all but every Nth pixel in the encoding process.")
+    parser.add_argument("-s", "--skipping", metavar="N", help="Skip all but every Nth pixel in the encoding process. 0 to populate the image evenly.")
     parser.add_argument("-d", "--decode", action="store_true", help="Read a message from the image file.")
     parser.add_argument("-m", "--manual", action="store_true", help="Decode with optional manual --bitlevel and --skipping flags (default to 1 and 1).")
     parser.add_argument("-a", "--analyze", action="store_true", help="Tries to automatically find an encoded message and its settings.")
@@ -205,12 +213,11 @@ if __name__ == "__main__":
     except FileNotFoundError:
         print("No such file found.")
         argv = None # dirty hack, vol. 1
-
     if not argv: # dirty hack, the finale.
         pass
 
     elif argv.decode: # -d
-        bit_level, skipping = check_for_data(img)
+        bit_level, skipping = analyze_file(img)
         if bit_level != -1:
             print(to_ascii(decode_message(img, bit_level, skipping)))
     
@@ -221,6 +228,7 @@ if __name__ == "__main__":
         try:
             text = open(argv.input, "r").read()
             stripped = "".join((c for c in text if 0 < ord(c) < 255)) # stupid unicode.
+            skipping = calculate_skip(skip=argv.skipping, msg=stripped, bits=bit_level)
             encode_message(img, stripped, bit_level, skipping)
             image.save("encoded.png")
             print(f"Encoded with bit_level = {bit_level} and skipping = {skipping}")
@@ -228,6 +236,7 @@ if __name__ == "__main__":
             print(f"Supplied text file {argv.input} not found.")
     
     elif argv.typemessage: # -t "this is a message i wish to encode." -b [bitlevel] -s [skipping]
+        skipping = calculate_skip(skip=argv.skipping, msg=argv.typemessage, bits=bit_level)
         encode_message(img, argv.typemessage, bit_level, skipping)
         image.save("encoded.png")
     

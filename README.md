@@ -8,7 +8,7 @@ Encode your message into `image.png` with the command `python stegano.py image.p
 Decode such a message from `encoded.png` with the command `python stegano.py encoded.png -d`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python stegano.py encoded.png -d > target.txt`.
 
 ## Encoding tweaks
-To use more bits of each colour for the message, use the `-b` or `--bitlevel` flag, with numbers 1-8, 1 being the least bits (most discreet) and 8 being the most extreme (0 bits for colour information!). To skip all but every Nth pixel (up -> down, then left -> right), use the `-s` or `--skipping` flag.
+To use more bits of each colour for the message, use the `-b` or `--bitlevel` flag, with numbers 1-8, 1 being the least bits (most discreet) and 8 being the most extreme (0 bits for colour information!). To skip all but every Nth pixel (up -> down, then left -> right), use the `-s` or `--skipping` flag. `-s 0` causes the program to try to populate the image *evenly* with encoded pixels, more useful with shorter messages.
 
 For instance, to encode the file `source.txt` into `example.png`, storing 4 bits per pixel, and skipping all but every 3rd pixel, you'd use the command
 
@@ -32,7 +32,7 @@ The program will attempt to automatically detect the message, but you can use th
                             Type directly to encode a message into the image file.
     -b BITS_PER_PIXEL, --bitlevel BITS_PER_PIXEL
                             Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.
-    -s N, --skipping N    Skip all but every Nth pixel in the encoding process.
+    -s N, --skipping N    Skip all but every Nth pixel in the encoding process. 0 to populate the image evenly.
     -d, --decode          Read a message from the image file.
     -m, --manual          Decode with optional manual --bitlevel and --skipping flags (default to 1 and 1).
     -a, --analyze         Tries to automatically find an encoded message and its settings.
