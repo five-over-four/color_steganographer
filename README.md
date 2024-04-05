@@ -12,7 +12,7 @@ To use more bits of each colour for the message, use the `-b` or `--bitlevel` fl
 
 For instance, to encode the file `source.txt` into `example.png`, storing 4 bits per pixel, and skipping all but every 3rd pixel, you'd use the command
 
-`python stegano.py -i source.txt -b 4 -s 3`
+`python stegano.py -i source.txt -b 4 -s 3`.
 
 The program will attempt to automatically detect the message, but you can use the `-m` or `--manual` flag to give decoding instructions: `python stegano.py encoded.png -m -b 4 -s 3`.
 
@@ -56,3 +56,6 @@ Note that compressing the image after encoding will likely destroy the encoded i
 
 ## Included example
 I've encoded something into the `example_encoded.png` that you can test the program on. Simply run `python stegano.py example_encoded.png -d > result.txt` to see what it is.
+
+## Future features
+I'd like to code in an offset feature, which will allow one to use skipping number `n` and therefore by offsetting each message by 1 pixel, encode `n` messages inside one image. Or more, if they're short.
