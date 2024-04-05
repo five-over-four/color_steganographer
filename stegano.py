@@ -1,6 +1,7 @@
 from random import choice
 from itertools import product
 import argparse
+from time import perf_counter
 from PIL import Image
 
 #   #   #   #   #   #   #   #   #   #   #   #   #   #   #    #
@@ -77,7 +78,6 @@ def decode_message(img, mod_power = 1, skipping=1):
                     b += bit_data[modulus]
                     steps += 1
                     if steps == 24 and b[:24] != key_seq:
-                        print(b)
                         return to_bin("no message found!")
             pixel_pos += 1
     try:
@@ -149,34 +149,12 @@ def generate_colour_tuple(pixel, new_val, ch):
         case "red": return (new_val, g, b)
         case "green": return (r, new_val, b)
         case "blue": return (r, g, new_val)
-    
-def analyze_file():
-    """
-    Gives some heuristic constraints for how much data can be encoded
-    within the image file.
-    """
-    from math import floor
-    from decimal import Decimal, ROUND_UP
 
-    max_size = floor(width*height*3/8)-24
-
-    # Python rounds 7.955 to 7.95 instead of 7.96.
-    def round_proper(val):
-        return Decimal(str(val)).quantize(Decimal('.01'), rounding=ROUND_UP)
-    
-    def storage_estimates():
-        levelinfo = ""
-        for blevel in range(1,9):
-            levelinfo += f"{blevel}: {max_size * blevel} / {round_proper(max_size/1000 * blevel)}kB\n"
-        return f"Storage capacity at each bit level:\n{levelinfo}"
-    
-    return storage_estimates()
-
-def check_for_data(img, skip_max=15):
+def analyze_file(img, skip_max=15, utility_mode=True):
     """
     This will check the image for a starting sequence in all possible combinations 
     of bit_levels and skipping modes up to skip_max - 1. Will stop each time after 24
-    bits are found.
+    bits are found. utility_mode just returns found values so we can automatically decode.
     """
     pos = 0
     for bits in range(1,9):
@@ -190,8 +168,11 @@ def check_for_data(img, skip_max=15):
                     b += bit_data[modulus]
                 pos += skip_level
             if len(b) >= 24 and b[:24] == "10"*12:
-                return f"Message detected with bit_level = {bits} and skipping {skip_level}."
-    return "No message found."
+                if not utility_mode: 
+                    print(f"Message detected with bit_level = {bits} and skipping {skip_level}.")
+                return (bits, skip_level)
+    print("No message found.")
+    return (-1, -1)
                 
 
 if __name__ == "__main__":
@@ -206,8 +187,9 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--bitlevel", metavar="BITS_PER_PIXEL", help="Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.")
     parser.add_argument("-s", "--skipping", metavar="N", help="Skip all but every Nth pixel in the encoding process.")
     parser.add_argument("-d", "--decode", action="store_true", help="Read a message from the image file.")
-    parser.add_argument("-a", "--analyze", action="store_true", help="Gives storage constraints for the image.")
-    parser.add_argument("-c", "--check", action="store_true", help="Tries to automatically find an encoded message and its settings.")
+    parser.add_argument("-m", "--manual", action="store_true", help="Decode with optional manual --bitlevel and --skipping flags (default to 1 and 1).")
+    parser.add_argument("-a", "--analyze", action="store_true", help="Tries to automatically find an encoded message and its settings.")
+
     argv = parser.parse_args()
     
     # just some global vars and validation. bit messy.
@@ -226,21 +208,28 @@ if __name__ == "__main__":
 
     if not argv: # dirty hack, the finale.
         pass
-    elif argv.decode:
+
+    elif argv.decode: # -d
+        bit_level, skipping = check_for_data(img)
+        if bit_level != -1:
+            print(to_ascii(decode_message(img, bit_level, skipping)))
+    
+    elif argv.manual: # -m -b [bitlevel] -s [skipping]
         print(to_ascii(decode_message(img, bit_level, skipping)))
-    elif argv.input:
+    
+    elif argv.input: # -i [textfile.txt]
         try:
             text = open(argv.input, "r").read()
             stripped = "".join((c for c in text if 0 < ord(c) < 255)) # stupid unicode.
             encode_message(img, stripped, bit_level, skipping)
             image.save("encoded.png")
-            print(f"Encoded with bit_level = {bit_level}")
+            print(f"Encoded with bit_level = {bit_level} and skipping = {skipping}")
         except FileNotFoundError:
             print(f"Supplied text file {argv.input} not found.")
-    elif argv.typemessage:
+    
+    elif argv.typemessage: # -t "this is a message i wish to encode." -b [bitlevel] -s [skipping]
         encode_message(img, argv.typemessage, bit_level, skipping)
         image.save("encoded.png")
-    elif argv.analyze:
-        print(analyze_file())
-    elif argv.check:
-        print(check_for_data(img))
+    
+    elif argv.analyze: # -a
+        analyze_file(img, skip_max=15, utility_mode=False)

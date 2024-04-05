@@ -7,8 +7,6 @@ Encode your message into `image.png` with the command `python stegano.py image.p
 
 Decode such a message from `encoded.png` with the command `python stegano.py encoded.png -d`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python stegano.py encoded.png -d > target.txt`.
 
-If you do not know whether a message has been hidden in the image using this tool, use the `-c` or `--check` flag. Simply run `python stegano.py image.png -c`.
-
 ## Encoding tweaks
 To use more bits of each colour for the message, use the `-b` or `--bitlevel` flag, with numbers 1-8, 1 being the least bits (most discreet) and 8 being the most extreme (0 bits for colour information!). To skip all but every Nth pixel (up -> down, then left -> right), use the `-s` or `--skipping` flag.
 
@@ -16,8 +14,10 @@ For instance, to encode the file `source.txt` into `example.png`, storing 4 bits
 
 `python stegano.py -i source.txt -b 4 -s 3`
 
+The program will attempt to automatically detect the message, but you can use the `-m` or `--manual` flag to give decoding instructions: `python stegano.py encoded.png -m -b 4 -s 3`.
+
 ## Help
-    usage: Simple Binary Steganography Tool [-h] [-i TEXTFILE] [-t MESSAGE] [-b BITS_PER_PIXEL] [-s N] [-d] [-a] [-c] filename
+    usage: Simple Binary Steganography Tool [-h] [-i TEXTFILE] [-t MESSAGE] [-b BITS_PER_PIXEL] [-s N] [-d] [-m] [-a] filename
 
     Encode and decode a message into and from the colour channels of an image.
 
@@ -34,8 +34,8 @@ For instance, to encode the file `source.txt` into `example.png`, storing 4 bits
                             Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.
     -s N, --skipping N    Skip all but every Nth pixel in the encoding process.
     -d, --decode          Read a message from the image file.
-    -a, --analyze         Gives storage constraints for the image.
-    -c, --check           Tries to automatically find an encoded message and its settings.
+    -m, --manual          Decode with optional manual --bitlevel and --skipping flags (default to 1 and 1).
+    -a, --analyze         Tries to automatically find an encoded message and its settings.
 
 ## Method of steganography used
 Each pixel in the image contains three colours, red, green, and blue. Their values range from 0 to 255 (2^8 values, 8 bits). By adjusting
@@ -50,7 +50,7 @@ This naturally introduces some noise, but is completely invisible at low bit_lev
 ## Space considerations
 As each pixel can contain 3 * bit_level bits of information and the starting sequence takes up 24 bits (end sequence can be omitted), the maximum number of characters you can encode into an image of size width * height is `(width * height * 3 * bit_level)/8 - 24`, rounded down.
 
-For instance, at bit_level 1, a 400 x 400 image can hold (400 * 400 * 3)/8 - 24 = 59976 characters, or about 60 kilobytes of information.
+For instance, at bit_level 1, a 400 x 400 image can hold (400 * 400 * 3)/8 - 24 = 59976 characters, or about 60 kilobytes of information. Skipping always divides the data capacity by the skipping number.
 
 Note that compressing the image after encoding will likely destroy the encoded information as it relies on precise numerical values.
 
