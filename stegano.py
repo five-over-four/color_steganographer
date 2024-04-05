@@ -55,7 +55,7 @@ def to_ascii(b):
 
 # this is pretty slow for now, because it loops over all the pixels individually.
 # TODO: use numpy or build a little queue that checks for termination string.
-def decode_message(img, mod_power = 1):
+def decode_message(img, mod_power = 1, skipping=1):
     """
     Reads ch channels' parity as 0 or 1 into b and returns.
     Terminates on 24 bits of "10101010..."
@@ -67,16 +67,19 @@ def decode_message(img, mod_power = 1):
     key_seq = "10"*12
     bit_data = bit_combinations(mod_power)
     steps = 0
+    pixel_pos = 0
 
     for x in range(width):
         for y in range(height):
-            for ch in ("red", "green", "blue"):
-                arity = img[x, y][channels[ch]] % (2**mod_power)
-                b += bit_data[arity]
-                steps += 1
-                if steps == 24 and b[:24] != key_seq:
-                    print(b)
-                    return to_bin("no message found!")
+            if (pixel_pos % skipping) == 0:
+                for ch in ("red", "green", "blue"):
+                    modulus = img[x, y][channels[ch]] % (2**mod_power)
+                    b += bit_data[modulus]
+                    steps += 1
+                    if steps == 24 and b[:24] != key_seq:
+                        print(b)
+                        return to_bin("no message found!")
+            pixel_pos += 1
     try:
         endpoint = b[24:].index(key_seq)
         return b[24: endpoint] # cut out everything outside key_seq
@@ -84,7 +87,7 @@ def decode_message(img, mod_power = 1):
         return b[24:]
     
 
-def encode_message(img, msg, mod_power=1):
+def encode_message(img, msg, mod_power=1, skipping=1):
     """
     Writes an already encoded string of bytes into the pixels of
     the chosen image from a given message. msg is a sequence
@@ -106,18 +109,21 @@ def encode_message(img, msg, mod_power=1):
     if msg_length % mod_power != 0:
         msg += (mod_power - (msg_length % mod_power)) * "0"
     msg_pos = 0
+    pixel_pos = 0
     
     for x in range(width):
         for y in range(height):
-            for ch in ("red", "green", "blue"):
-                if msg_pos >= len(msg):
-                    return 1
-                msg_segment = msg[msg_pos:msg_pos + mod_power] # this many bits [010]0101011101 with mod_power==3.
-                img[x, y] = generate_colour_tuple(img[x, y],
-                                            round_to_congruence(img[x, y][channels[ch]],
-                                                         bit_data.index(msg_segment), 
-                                                         2**mod_power), ch)
-                msg_pos += mod_power
+            if (pixel_pos % skipping) == 0:
+                for ch in ("red", "green", "blue"):
+                    if msg_pos >= len(msg):
+                        return 1
+                    msg_segment = msg[msg_pos:msg_pos + mod_power] # this many bits [010]0101011101 with mod_power==3.
+                    img[x, y] = generate_colour_tuple(img[x, y],
+                                                round_to_congruence(img[x, y][channels[ch]],
+                                                            bit_data.index(msg_segment), 
+                                                            2**mod_power), ch)
+                    msg_pos += mod_power
+            pixel_pos += 1
 
 def round_to_congruence(k, end_remainder, modulus=2):
     """
@@ -176,12 +182,12 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--input", metavar="TEXTFILE", help="Encode the contents of a text file into the image.")
     parser.add_argument("-t", "--typemessage", metavar="MESSAGE", help="Type directly to encode a message into the image file.")
     parser.add_argument("-b", "--bitlevel", metavar="BITS_PER_PIXEL", help="Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.")
+    parser.add_argument("-s", "--skipping", metavar="N", help="Skip all but every Nth pixel in the encoding process.")
     parser.add_argument("-d", "--decode", action="store_true", help="Read a message from the image file.")
     parser.add_argument("-a", "--analyze", action="store_true", help="Gives storage constraints for the image.")
     argv = parser.parse_args()
     
-    # global vars; bit_level controls the modular arithmetic base and thus the
-    # number of bits of info you get per pixel. +1bit = x2 storage (and noise!)
+    # just some global vars and validation. bit messy.
     try:
         image = Image.open(argv.filename).convert("RGB")
         img = image.load()
@@ -189,6 +195,8 @@ if __name__ == "__main__":
         channels = {"red": 0, "green": 1, "blue": 2}
         bit_level = int(argv.bitlevel) if argv.bitlevel else 1
         bit_level = bit_level if (0 < bit_level <= 8) else 1
+        skipping = int(argv.skipping) if argv.skipping else 1
+        skipping = skipping if skipping > 0 else 1
     except FileNotFoundError:
         print("No such file found.")
         argv = None # dirty hack, vol. 1
@@ -196,18 +204,18 @@ if __name__ == "__main__":
     if not argv: # dirty hack, the finale.
         pass
     elif argv.decode:
-        print(to_ascii(decode_message(img, bit_level)))
+        print(to_ascii(decode_message(img, bit_level, skipping)))
     elif argv.input:
         try:
             text = open(argv.input, "r").read()
             stripped = "".join((c for c in text if 0 < ord(c) < 255)) # stupid unicode.
-            encode_message(img, stripped, bit_level)
+            encode_message(img, stripped, bit_level, skipping)
             image.save("encoded.png")
             print(f"Encoded with bit_level = {bit_level}")
         except FileNotFoundError:
             print(f"Supplied text file {argv.input} not found.")
     elif argv.typemessage:
-        encode_message(img, argv.typemessage, bit_level)
+        encode_message(img, argv.typemessage, bit_level, skipping)
         image.save("encoded.png")
     elif argv.analyze:
         print(analyze_file())

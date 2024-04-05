@@ -5,10 +5,17 @@ remainder under modular arithmetic of that channels' colour codes, in order of r
 
 Encode your message into `image.png` with the command `python stegano.py image.png -t "this is my message."` or from a file `source.txt` by using `python stegano.py image.png -i source.txt`
 
-Decode such a message from `encoded.png` with the command `python stegano.py encoded.png -d`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python stegano.py encoded.png -d > target.txt`. To use more bits of each colour for the message, use the `-b` flag, with numbers 1-8, 1 being the least bits (most discreet) and 8 being the most extreme (0 bits for colour information!).
+Decode such a message from `encoded.png` with the command `python stegano.py encoded.png -d`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python stegano.py encoded.png -d > target.txt`.
+
+## Encoding tweaks
+To use more bits of each colour for the message, use the `-b` or `--bitlevel` flag, with numbers 1-8, 1 being the least bits (most discreet) and 8 being the most extreme (0 bits for colour information!). To skip all but every Nth pixel (up -> down, then left -> right), use the `-s` or `--skipping` flag.
+
+For instance, to encode the file `source.txt` into `example.png`, storing 4 bits per pixel, and skipping all but every 3rd pixel, you'd use the command
+
+`python stegano.py -i source.txt -b 4 -s 3`
 
 ## Help
-    usage: Simple Binary Steganography Tool [-h] [-i TEXTFILE] [-t MESSAGE] [-b BITS_PER_PIXEL] [-d] [-a] filename
+    usage: Simple Binary Steganography Tool [-h] [-i TEXTFILE] [-t MESSAGE] [-b BITS_PER_PIXEL] [-s N] [-d] [-a] filename
 
     Encode and decode a message into and from the colour channels of an image.
 
@@ -23,6 +30,7 @@ Decode such a message from `encoded.png` with the command `python stegano.py enc
                             Type directly to encode a message into the image file.
     -b BITS_PER_PIXEL, --bitlevel BITS_PER_PIXEL
                             Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.
+    -s N, --skipping N    Skip all but every Nth pixel in the encoding process.
     -d, --decode          Read a message from the image file.
     -a, --analyze         Gives storage constraints for the image.
 
