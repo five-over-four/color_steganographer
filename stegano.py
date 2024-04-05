@@ -239,6 +239,7 @@ if __name__ == "__main__":
         skipping = calculate_skip(skip=argv.skipping, msg=argv.typemessage, bits=bit_level)
         encode_message(img, argv.typemessage, bit_level, skipping)
         image.save("encoded.png")
+        print(f"Encoded with bit_level = {bit_level} and skipping = {skipping}")
     
     elif argv.analyze: # -a
         analyze_file(img, skip_max=15, utility_mode=False)
