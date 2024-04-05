@@ -60,9 +60,8 @@ def decode_message(img, mod_power = 1):
     Reads ch channels' parity as 0 or 1 into b and returns.
     Terminates on 24 bits of "10101010..."
 
-    mod_power means we encode 2**mod_power bits per pixel, resulting in
+    mod_power means we encode mod_power bits per pixel, resulting in
     more aggressive rounding of values and thus more visible changes.
-    Each increase in mod_power doubles the storage capacity.
     """
     b = ""
     key_seq = "10"*12
