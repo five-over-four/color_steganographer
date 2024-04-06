@@ -119,11 +119,11 @@ def encode_message(img, msg: str, width: int, height: int, channels: dict,
     every skipping-th pixel. offset allows one to start at the
     offset-th pixel.
     """
-    # 8 pixels of padding at start and end, 16 bits of nothing before end to safeguard
+    # 8 pixels of padding at start and end, 24 bits of nothing before end to safeguard
     # ending characters.
-    msg = "10"*3*4*bit_level + to_bin(msg) + "00"*16 + "10"*3*4*bit_level
+    msg = "10"*3*4*bit_level + to_bin(msg) + "00"*12 + "10"*3*4*bit_level
     msg_length = len(msg)
-    core_msg_length = msg_length - 3*8*bit_level*2 - 32
+    core_msg_length = msg_length - 3*8*bit_level*2 - 24 # len(to_bin(msg))
     bit_data = bit_combinations(bit_level)
 
     # pad to make msg length divisible by bit_level, so it'll process nicely with
@@ -131,20 +131,19 @@ def encode_message(img, msg: str, width: int, height: int, channels: dict,
     while msg_length % bit_level != 0:
         msg += "0"
         msg_length += 1
-    msg_length = len(msg)
     msg_pos = 0
     pos = offset
 
-    while msg_pos < msg_length:
+    while msg_pos <= msg_length:
         for ch in ("red", "green", "blue"):
             # window[010]0101011101 with bit_level=3.
             msg_segment = msg[msg_pos:msg_pos + bit_level]
-            (x, y) = pos // height, pos % height
+            x, y = pos // height, pos % height
             percent_done = 100 * (msg_pos - 3*8*bit_level) / core_msg_length
 
             if pos >= width * height and percent_done < 100:
                 return f"Couldn't fit entire message in image ({round(percent_done, 1)} % completed.)\n"
-            elif pos >= width and percent_done >= 100: # can't fit ending sequence, but msg fit.
+            elif pos >= width * height and percent_done >= 100: # can't fit ending sequence, but msg fit.
                 return ""
             elif msg_pos >= msg_length: # in case we run out of data mid-pixel.
                 return ""
@@ -181,12 +180,11 @@ def decode_message(img, width: int, height: int, channels: dict,
         if pos - offset == 8 * skipping and b[:key_len] != key_seq:
             return to_bin("No message found!")
         pos += skipping
-    try:
-        b = b[key_len:] # cut out first 10101010... sequence.
-        endpoint = b.index(key_seq) # second.
-        return b[:endpoint - 32] # cut out the 32 padding 0s at end.
-    except ValueError: # ran out of pixels before msg.
+    b = b[key_len:] # cut out first 10101010... sequence.
+    endpoint = b.find(key_seq) # second.
+    if endpoint == -1:
         return b
+    return b[:endpoint - 24] # cut out the 24 padding 0s at end.
 
 
 def analyze_file(img, height: int, channels: dict, skip_max=15, print_mode=False, **kwargs):
