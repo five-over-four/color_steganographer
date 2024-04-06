@@ -1,8 +1,11 @@
+"""
+This CLI-script encodes arbitrary text data into the colour channels of an image.
+"""
+
 from random import choice
 from itertools import product
 import argparse
 from math import ceil
-from time import perf_counter
 from PIL import Image
 
 #   #   #   #   #   #   #   #   #   #   #   #   #   # #
@@ -11,20 +14,24 @@ from PIL import Image
 
 def to_bin(s: str):
     """
-    Returns a string of bytes from a string of text;
-    "hello" => "0110100001100101011011000110110001101111"
+    Convert each character in the string into an 8-bit sequence and concatenate.
+
+    'hello' is converted to '0110100001100101011011000110110001101111'.
     """
     return "".join([ str(bin(ord(char)))[2:].zfill(8) for char in s])
 
 def decode_byte(b: str) -> str:
     """
-    Returns string representation of a byte into a character:
-    "11000001" => "a"
+    Returns string representation of a byte into a character.
+
+    '11000001' converts to 'a'.
     """
     return chr(int(bytes(b, "utf-8"), 2))
 
 def bit_combinations(power=1):
     """
+    Returns the set ["0", "1"]^power, elements concatenated.
+
     Generates ["0", "1"] with power==1
     Generates ["00", "01", "10", "11"] with power==2
     And so forth.
@@ -35,8 +42,10 @@ def bit_combinations(power=1):
 
 def to_ascii(b):
     """
-    Returns a string of characters from a string of bytes:
-    "0110100001100101011011000110110001101111" => "hello"
+    Returns a string of characters from a string of bytes.
+
+    '0110100001100101011011000110110001101111' converts to 'hello'.
+    The inverse operation of to_bin.
     """
     pos = 0
     s = ""
@@ -67,8 +76,7 @@ def round_to_congruence(k, end_remainder, modulus=2):
 
 def generate_colour_tuple(pixel, new_val, ch):
     """
-    Returns a pixel 3-tuple (r,g,b), where the ch-corresponding
-    colour is replaced by new_val.
+    Replaces the ch colour of the (r,g,b) tuple with new_val.
     """
     r, g, b = pixel
     match ch:
@@ -76,39 +84,42 @@ def generate_colour_tuple(pixel, new_val, ch):
         case "green": return (r, new_val, b)
         case "blue": return (r, g, new_val)
 
-def calculate_skip(skip: int, msg: str, bits: int):
+def calculate_skip(skipping: int, msg: str, bit_level: int, width: int, height: int, **kwargs):
     """
+    Calculates the maximum skipping number for encoding a given message such that it fits the image.
+
     If supplied with -s 0, calculates skipping number such that the message gets evenly
     encoded across the image. Try it with -t "asdfasdfasdfasdfasdfasdfasdfasdfasdf" -b 8 -s 0.
     """
-    if skip != "0": return int(skip)
-    required_pixels = 8 + ceil((len(msg) * 8) / (3 * bits))
+    if skipping != 0:
+        return skipping
+    required_pixels = 8 + ceil((len(msg) * 8) / (3 * bit_level))
     return int(max( ((height * width) // required_pixels), 1))
-    
+
 
 #   #   #   #   #   #   #   #   #   #   #   #   #   #   #    #  #
 # IO functions that deal with the actual encoding and decoding. #
 #   #   #   #   #   #   #   #   #   #   #   #   #   #   #    #  #
 
-def decode_message(img, mod_power = 1, skipping=1, offset=0):
+def decode_message(img, width: int, height: int, channels: dict,
+                   bit_level = 1, skipping=1, offset=0, **kwargs):
     """
-    Reads ch channels' remainder with division modulo 2**mod_power 
-    as that number in binary and returns the concatenated string.
-    Terminates and begins on 3*8*mod_power bits of alternating "1010..."
+    Reads pixel data and returns a string of bits if an encoded message is found.
 
-    mod_power means we encode mod_power bits per colour channel, skipping
-    means we encode every Nth pixel, offset means we start at the Nth pixel.
+    Reads ch channels' remainder with division modulo 2**bit_level 
+    as that number in binary and returns the concatenated string.
+    Terminates and begins on 3*8*bit_level bits of alternating "1010..."
     """
     b = ""
-    key_seq = "10"*3*4*mod_power # this means 8 pixels regardless of mod_power. 24bits for 1, 192bits for 8.
-    key_len = 3*8*mod_power
-    bit_data = bit_combinations(mod_power)
+    key_seq = "10"*3*4*bit_level # this means 8 pixels regardless of bit_level.
+    key_len = 3*8*bit_level
+    bit_data = bit_combinations(bit_level)
     pos = offset
 
     while pos < width * height:
         for ch in ("red", "green", "blue"):
             (x, y) = pos // height, pos % height
-            modulus = img[x, y][channels[ch]] % (2**mod_power)
+            modulus = img[x, y][channels[ch]] % (2**bit_level)
             b += bit_data[modulus]
         if pos - offset == 8 * skipping and b[:key_len] != key_seq:
             return to_bin("no message found!")
@@ -119,20 +130,24 @@ def decode_message(img, mod_power = 1, skipping=1, offset=0):
     except Exception: # the image was too small to contain the key_seq at the end.
         return b[key_len:]
 
-def encode_message(img, msg, mod_power=1, skipping=1, offset=0):
+def encode_message(img, msg: str, width: int, height: int, channels: dict,
+                   bit_level=1, skipping=1, offset=0, **kwargs):
     """
-    Writes binary sequence as a string (msg) into the pixels of img, taking
-    mod_power bits per colour channel every skipping-th pixel.
+    Writes binary sequence into the pixels of img.
+
+    Reserves bit_level bits per colour channel while skipping
+    every skipping-th pixel. offset allows one to start at the
+    offset-th pixel.
     """
     # 8 pixels of padding at start and end, 16 bits of nothing before end to safeguard
     # ending characters.
-    msg = "10"*3*4*mod_power + to_bin(msg) + "00"*16 + "10"*3*4*mod_power
-    bit_data = bit_combinations(mod_power)
+    msg = "10"*3*4*bit_level + to_bin(msg) + "00"*16 + "10"*3*4*bit_level
+    bit_data = bit_combinations(bit_level)
 
-    # pad to make msg length divisible by mod_power, so it'll process nicely with
+    # pad to make msg length divisible by bit_level, so it'll process nicely with
     # msg_segment down in the next block.
     msg_length = len(msg)
-    while msg_length % mod_power != 0:
+    while msg_length % bit_level != 0:
         msg += "0"
         msg_length += 1
     msg_length = len(msg)
@@ -141,7 +156,8 @@ def encode_message(img, msg, mod_power=1, skipping=1, offset=0):
 
     while msg_pos < msg_length:
         for ch in ("red", "green", "blue"):
-            msg_segment = msg[msg_pos:msg_pos + mod_power] # this many bits [010]0101011101 with mod_power==3.
+            # window[010]0101011101 with bit_level=3.
+            msg_segment = msg[msg_pos:msg_pos + bit_level]
             (x, y) = pos // height, pos % height
             if pos >= width * height:
                 return 1
@@ -149,13 +165,15 @@ def encode_message(img, msg, mod_power=1, skipping=1, offset=0):
                 return 1
             img[x, y] = generate_colour_tuple(img[x, y],
                             round_to_congruence(img[x, y][channels[ch]],
-                                                bit_data.index(msg_segment), 
-                                                2**mod_power), ch)
-            msg_pos += mod_power
+                                                bit_data.index(msg_segment),
+                                                2**bit_level), ch)
+            msg_pos += bit_level
         pos += skipping
 
-def analyze_file(img, skip_max=15, print_mode=False):
+def analyze_file(img, height: int, channels: dict, skip_max=15, print_mode=False, **kwargs):
     """
+    Tries to find an encoded message in the pixel data by identifying a starting sequence.
+
     This will check the image for a starting sequence in all possible combinations 
     of bit_levels and skipping modes up to skip_max - 1. Will go through each skip level
     as it's pretty fast. print_mode=True is used for --decode.
@@ -165,7 +183,7 @@ def analyze_file(img, skip_max=15, print_mode=False):
     for bits in range(1,9):
         bit_data = bit_combinations(bits)
         key_len = 3*8*bits
-        loop_skip = ceil(skip_max / (9 - bits)) # the number of pixels needed each bit_level is inversely proportional to it.
+        loop_skip = ceil(skip_max / (9 - bits))
         for skip_level in range(1, loop_skip):
             pos = 0
             b = ""
@@ -183,23 +201,10 @@ def analyze_file(img, skip_max=15, print_mode=False):
         return (-1, -1)
     return found
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-                    prog="Simple Binary Steganography Tool", 
-                    description="Encode and decode a message into and from the colour channels\nof an image.",
-                    epilog="")
-    
-    parser.add_argument("filename", help="Name of the image file.")
-    parser.add_argument("-i", "--input", metavar="TEXTFILE", help="Encode the contents of a text file into the image.")
-    parser.add_argument("-t", "--typemessage", metavar="MESSAGE", help="Type directly to encode a message into the image file.")
-    parser.add_argument("-d", "--decode", action="store_true", help="Read a message from the image file.")
-    parser.add_argument("-b", "--bitlevel", metavar="BITS_PER_PIXEL", help="Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.")
-    parser.add_argument("-s", "--skipping", metavar="N", help="Skip all but every Nth pixel in the encoding process. 0 to populate the image evenly (default).")
-    parser.add_argument("-o", "--offset", metavar="K", help="Start encoding at the Kth pixel, allows for multiple messages per image, assuming you use the same skipping number.")
-    parser.add_argument("-m", "--manual", action="store_true", help="Decode with optional manual --bitlevel and --skipping flags (default to 1 and 1).")
-    parser.add_argument("-a", "--analyze", action="store_true", help="Tries to automatically find an encoded message and its settings.")
-
-    argv = parser.parse_args()
+def main(argv):
+    """
+    Argument handling and data validation for user input.
+    """
 
     # just some global vars and validation. bit messy.
     try:
@@ -207,50 +212,66 @@ if __name__ == "__main__":
         img = image.load()
         width, height = image.size
         channels = {"red": 0, "green": 1, "blue": 2}
-        bit_level = int(argv.bitlevel) if argv.bitlevel else 1
-        bit_level = bit_level if (0 < bit_level <= 8) else 1
-        skipping = int(argv.skipping) if argv.skipping else 1
-        skipping = skipping if skipping > 0 else 1
-        offset = int(argv.offset) if argv.offset else 0
-        offset = offset if offset >= 0 else 0
+        bit_level = argv.bitlevel or 1
+        skipping = argv.skipping or 1
+        offset = argv.offset or 0
+        bit_level = bit_level if (8 >= bit_level > 0) else 1
+        skipping =  skipping if (skipping > 0) else 1
+        offset = offset if (offset >= 0) else 0
+        data = {"img": img, "width": width, "height": height,
+                "bit_level": bit_level, "skipping": skipping,
+                "offset": offset, "channels": channels,
+                "msg": ""}
     except FileNotFoundError:
         print(f"No file '{argv.filename}' found.")
-        argv = None # dirty hack, vol. 1
-    if not argv: # dirty hack, the finale.
-        pass
+        return -1
 
-    elif argv.decode: # -d
-        bit_level, skipping = analyze_file(img, skip_max=calculate_skip("0", " ", 8), print_mode=False)
-        if bit_level != -1:
-            print(to_ascii(decode_message(img, bit_level, skipping, 0)))
-    
+    if argv.decode: # -d
+        data["bit_level"], data["skipping"] = analyze_file(skip_max=calculate_skip(0, " ", 8, width, height),
+                                                           print_mode=False,
+                                                           **data)
+        if data["bit_level"] != -1: # something was found automatically, otherwise get (-1, -1).
+            print(to_ascii(decode_message(**data)))
+
     elif argv.manual: # -m -b [bitlevel] -s [skipping]
-        print(to_ascii(decode_message(img, bit_level, skipping, offset)))
-    
+        print(to_ascii(decode_message(**data)))
+
     elif argv.input: # -i [textfile.txt]
         try:
-            text = open(argv.input, "r").read()
-            stripped = "".join((c for c in text if 0 < ord(c) < 255)) # stupid unicode.
-            
-            if not argv.skipping:
-                skipping = calculate_skip(skip="0", msg=stripped, bits=bit_level)
-            else:
-                skipping = calculate_skip(skip=argv.skipping, msg=stripped, bits=bit_level)
-            encode_message(img, stripped, bit_level, skipping, offset)
+            text = open(argv.input, "r", encoding="utf-8").read()
+            data["msg"] = "".join((c for c in text if 0 < ord(c) < 255)) # stupid unicode.
+            data["skipping"] = calculate_skip(**data)
+            encode_message(**data)
             image.save("encoded.png")
-            print(f"Encoded with bit_level = {bit_level} and skipping = {skipping}")
+            print(f"Encoded with bit_level = {data['bit_level']} and skipping = {data['skipping']}")
         except FileNotFoundError:
             print(f"Supplied text file '{argv.input}' not found.")
-    
-    elif argv.typemessage: # -t "this is a message i wish to encode." -b [bitlevel] -s [skipping]
-        if not argv.skipping:
-            skipping = calculate_skip(skip="0", msg=argv.typemessage, bits=bit_level)
-        else:
-            skipping = calculate_skip(skip=argv.skipping, msg=argv.typemessage, bits=bit_level)
-        encode_message(img, argv.typemessage, bit_level, skipping, offset)
+
+    elif argv.typemessage: # -t "some message." -b [bitlevel] -s [skipping] -o [offset]
+        data["msg"] = argv.typemessage
+        skipping = calculate_skip(**data)
+        encode_message(**data)
         image.save("encoded.png")
-        print(f"Encoded with bit_level = {bit_level} and skipping = {skipping}")
-    
+        print(f"Encoded with bit_level = {data["bit_level"]} and skipping = {data["skipping"]}")
+
     elif argv.analyze: # -a. will not test offsets.
-        largest_possible_skip = calculate_skip("0", " ", 8) # this is absolute shortest message that can exist.
-        analyze_file(img, skip_max=largest_possible_skip, print_mode=True)
+        largest_possible_skip = calculate_skip(0, " ", 8, width, height)
+        analyze_file(skip_max=largest_possible_skip, print_mode=True, **data)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+                    prog="Simple Binary Steganography Tool",
+                    description="Encode and decode a message into and from the colour channels\nof an image.")
+
+    parser.add_argument("filename", help="Name of the image file.")
+    parser.add_argument("-i", "--input", metavar="TEXTFILE", help="Encode the contents of a text file into the image.")
+    parser.add_argument("-t", "--typemessage", metavar="MESSAGE", help="Type directly to encode a message into the image file.")
+    parser.add_argument("-d", "--decode", action="store_true", help="Read a message from the image file.")
+    parser.add_argument("-b", "--bitlevel", metavar="BITS_PER_PIXEL", type=int, help="Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.")
+    parser.add_argument("-s", "--skipping", metavar="N", type=int, help="Skip all but every Nth pixel in the encoding process. 0 to populate the image evenly (default).")
+    parser.add_argument("-o", "--offset", metavar="K", type=int, help="Start encoding at the Kth pixel, allows for multiple messages per image, assuming you use the same skipping number.")
+    parser.add_argument("-m", "--manual", action="store_true", help="Decode with optional manual --bitlevel and --skipping flags (default to 1 and 1).")
+    parser.add_argument("-a", "--analyze", action="store_true", help="Tries to automatically find an encoded message and its settings.")
+
+    main(parser.parse_args())
