@@ -247,8 +247,8 @@ def main(argv):
         except FileNotFoundError:
             print(f"Supplied text file '{argv.input}' not found.")
 
-    elif argv.typemessage: # -t "some message." -b [bitlevel] -s [skipping] -o [offset]
-        data["msg"] = argv.typemessage
+    elif argv.type: # -t "some message." -b [bitlevel] -s [skipping] -o [offset]
+        data["msg"] = argv.type
         skipping = calculate_skip(**data)
         encode_message(**data)
         image.save("encoded.png")
@@ -266,7 +266,7 @@ if __name__ == "__main__":
 
     parser.add_argument("filename", help="Name of the image file.")
     parser.add_argument("-i", "--input", metavar="TEXTFILE", help="Encode the contents of a text file into the image.")
-    parser.add_argument("-t", "--typemessage", metavar="MESSAGE", help="Type directly to encode a message into the image file.")
+    parser.add_argument("-t", "--type", metavar="MESSAGE", help="Type directly to encode a message into the image file.")
     parser.add_argument("-d", "--decode", action="store_true", help="Read a message from the image file.")
     parser.add_argument("-b", "--bitlevel", metavar="BITS_PER_PIXEL", type=int, help="Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.")
     parser.add_argument("-s", "--skipping", metavar="N", type=int, help="Skip all but every Nth pixel in the encoding process. 0 to populate the image evenly (default).")

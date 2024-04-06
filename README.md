@@ -33,7 +33,7 @@ Example: to encode *two* messages, `file1.txt` and `file2.txt`, use `python steg
     -h, --help            show this help message and exit
     -i TEXTFILE, --input TEXTFILE
                             Encode the contents of a text file into the image.
-    -t MESSAGE, --typemessage MESSAGE
+    -t MESSAGE, --type MESSAGE
                             Type directly to encode a message into the image file.
     -d, --decode          Read a message from the image file.
     -b BITS_PER_PIXEL, --bitlevel BITS_PER_PIXEL
