@@ -20,6 +20,7 @@ def to_bin(s: str):
     """
     return "".join([ str(bin(ord(char)))[2:].zfill(8) for char in s])
 
+
 def decode_byte(b: str) -> str:
     """
     Returns string representation of a byte into a character.
@@ -27,6 +28,7 @@ def decode_byte(b: str) -> str:
     '11000001' converts to 'a'.
     """
     return chr(int(bytes(b, "utf-8"), 2))
+
 
 def bit_combinations(power=1):
     """
@@ -39,6 +41,7 @@ def bit_combinations(power=1):
     combos = product(["0", "1"], repeat=power)
     combos = ["".join(x) for x in combos]
     return combos
+
 
 def to_ascii(b):
     """
@@ -68,11 +71,16 @@ def round_to_congruence(k, end_remainder, modulus=2):
     end_remainder %= modulus # make sure it's not modulus itself.
     rem_diff = end_remainder - remainder
     n = k + rem_diff
-    if n > k and n - modulus >= 0: return choice([n, n - modulus])
-    elif n < k and n + modulus <= 255: return choice([n, n + modulus])
-    elif n < 0: return n + modulus
-    elif n > 255: return n - modulus
+    if n > k and n - modulus >= 0:
+        return choice([n, n - modulus])
+    elif n < k and n + modulus <= 255:
+        return choice([n, n + modulus])
+    elif n < 0:
+        return n + modulus
+    elif n > 255:
+        return n - modulus
     return n
+
 
 def generate_colour_tuple(pixel, new_val, ch):
     """
@@ -83,6 +91,7 @@ def generate_colour_tuple(pixel, new_val, ch):
         case "red": return (new_val, g, b)
         case "green": return (r, new_val, b)
         case "blue": return (r, g, new_val)
+
 
 def calculate_skip(skipping: int, msg: str, bit_level: int, width: int, height: int, **kwargs):
     """
@@ -132,7 +141,7 @@ def encode_message(img, msg: str, width: int, height: int, channels: dict,
             (x, y) = pos // height, pos % height
             if pos >= width * height:
                 prcnt_done = 100 * pos / (msg_length - 3*8*bit_level + 32)
-                return f"Couldn't fit entire message in image ({round(prcnt_done, 1)} %)\n" 
+                return f"Couldn't fit entire message in image ({round(prcnt_done, 1)} %)\n"
             elif msg_pos >= msg_length: # in case we run out of data mid-pixel.
                 return ""
             img[x, y] = generate_colour_tuple(img[x, y],
@@ -142,6 +151,7 @@ def encode_message(img, msg: str, width: int, height: int, channels: dict,
             msg_pos += bit_level
         pos += skipping
     return ""
+
 
 def decode_message(img, width: int, height: int, channels: dict,
                    bit_level = 1, skipping=1, offset=0, **kwargs):
@@ -172,6 +182,7 @@ def decode_message(img, width: int, height: int, channels: dict,
         return b[:endpoint - 32] # cut out the 32 padding 0s at end.
     except ValueError: # ran out of pixels before msg.
         return b
+
 
 def analyze_file(img, height: int, channels: dict, skip_max=15, print_mode=False, **kwargs):
     """
@@ -204,6 +215,7 @@ def analyze_file(img, height: int, channels: dict, skip_max=15, print_mode=False
         return (-1, -1)
     return found
 
+
 def main(argv):
     """
     Argument handling and data validation for user input.
@@ -212,27 +224,28 @@ def main(argv):
     # just some global vars and validation. bit messy.
     try:
         image = Image.open(argv.filename).convert("RGB")
-        img = image.load()
-        width, height = image.size
-        channels = {"red": 0, "green": 1, "blue": 2}
-        bit_level = argv.bitlevel or 1
-        skipping = argv.skipping or 1
-        offset = argv.offset or 0
-        bit_level = bit_level if (8 >= bit_level > 0) else 1
-        skipping =  skipping if (skipping > 0) else 1
-        offset = offset if (offset >= 0) else 0
-        data = {"img": img, "width": width, "height": height,
-                "bit_level": bit_level, "skipping": skipping,
-                "offset": offset, "channels": channels,
-                "msg": ""}
     except FileNotFoundError:
         print(f"No file '{argv.filename}' found.")
         return -1
+    img = image.load()
+    width, height = image.size
+    channels = {"red": 0, "green": 1, "blue": 2}
+    bit_level = argv.bitlevel or 1
+    skipping = argv.skipping or 1
+    offset = argv.offset or 0
+    bit_level = bit_level if (8 >= bit_level > 0) else 1
+    skipping =  skipping if (skipping > 0) else 1
+    offset = offset if (offset >= 0) else 0
+    data = {"img": img, "width": width, "height": height,
+            "bit_level": bit_level, "skipping": skipping,
+            "offset": offset, "channels": channels,
+            "msg": ""}
 
     if argv.decode: # -d
-        data["bit_level"], data["skipping"] = analyze_file(skip_max=calculate_skip(0, " ", 8, width, height),
-                                                           print_mode=False,
-                                                           **data)
+        data["bit_level"], data["skipping"] = \
+            analyze_file(skip_max=calculate_skip(0, " ", 8, width, height),
+                        print_mode=False,
+                        **data)
         if data["bit_level"] != -1: # something was found automatically, otherwise get (-1, -1).
             print(to_ascii(decode_message(**data)))
 
