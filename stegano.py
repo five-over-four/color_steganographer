@@ -122,11 +122,12 @@ def encode_message(img, msg: str, width: int, height: int, channels: dict,
     # 8 pixels of padding at start and end, 16 bits of nothing before end to safeguard
     # ending characters.
     msg = "10"*3*4*bit_level + to_bin(msg) + "00"*16 + "10"*3*4*bit_level
+    msg_length = len(msg)
+    core_msg_length = msg_length - 3*8*bit_level*2 - 32
     bit_data = bit_combinations(bit_level)
 
     # pad to make msg length divisible by bit_level, so it'll process nicely with
     # msg_segment down in the next block.
-    msg_length = len(msg)
     while msg_length % bit_level != 0:
         msg += "0"
         msg_length += 1
@@ -139,11 +140,15 @@ def encode_message(img, msg: str, width: int, height: int, channels: dict,
             # window[010]0101011101 with bit_level=3.
             msg_segment = msg[msg_pos:msg_pos + bit_level]
             (x, y) = pos // height, pos % height
-            if pos >= width * height:
-                prcnt_done = 100 * pos / (msg_length - 3*8*bit_level + 32)
-                return f"Couldn't fit entire message in image ({round(prcnt_done, 1)} %)\n"
+            percent_done = 100 * (msg_pos - 3*8*bit_level) / core_msg_length
+
+            if pos >= width * height and percent_done < 100:
+                return f"Couldn't fit entire message in image ({round(percent_done, 1)} % completed.)\n"
+            elif pos >= width and percent_done >= 100: # can't fit ending sequence, but msg fit.
+                return ""
             elif msg_pos >= msg_length: # in case we run out of data mid-pixel.
                 return ""
+            
             img[x, y] = generate_colour_tuple(img[x, y],
                             round_to_congruence(img[x, y][channels[ch]],
                                                 bit_data.index(msg_segment),
@@ -174,7 +179,7 @@ def decode_message(img, width: int, height: int, channels: dict,
             modulus = img[x, y][channels[ch]] % (2**bit_level)
             b += bit_data[modulus]
         if pos - offset == 8 * skipping and b[:key_len] != key_seq:
-            return to_bin("no message found!")
+            return to_bin("No message found!")
         pos += skipping
     try:
         b = b[key_len:] # cut out first 10101010... sequence.
@@ -189,16 +194,16 @@ def analyze_file(img, height: int, channels: dict, skip_max=15, print_mode=False
     Tries to find an encoded message in the pixel data by identifying a starting sequence.
 
     This will check the image for a starting sequence in all possible combinations 
-    of bit_levels and skipping modes up to skip_max - 1. Will go through each skip level
+    of bit_levels and skipping modes up to skip_max. Will go through each skip level
     as it's pretty fast. print_mode=True is used for --decode.
     """
     pos = 0
     found = None
-    for bits in range(1,9):
+    for bits in range(8,0,-1): # 8 bit start seq. is also 6, 4, 2 startup; start high.
         bit_data = bit_combinations(bits)
         key_len = 3*8*bits
-        loop_skip = ceil(skip_max / (9 - bits))
-        for skip_level in range(1, loop_skip):
+        loop_skip = max(ceil(skip_max / (9 - bits)), 1) # max skip for this bit_level.
+        for skip_level in range(1, loop_skip + 1):
             pos = 0
             b = ""
             while len(b) < key_len:
@@ -209,7 +214,7 @@ def analyze_file(img, height: int, channels: dict, skip_max=15, print_mode=False
             if b[:key_len] == "10"*3*4*bits:
                 if print_mode:
                     print(f"Message detected with bit_level = {bits} and skipping = {skip_level}.")
-                found = (bits, skip_level)
+                return (bits, skip_level)
     if not found:
         print("No message found.")
         return (-1, -1)
@@ -243,7 +248,7 @@ def main(argv):
 
     if argv.decode: # -d
         data["bit_level"], data["skipping"] = \
-            analyze_file(skip_max=calculate_skip(0, " ", 8, width, height),
+            analyze_file(skip_max=calculate_skip(0, "  ", 8, width, height),
                         print_mode=False,
                         **data)
         if data["bit_level"] != -1: # something was found automatically, otherwise get (-1, -1).
