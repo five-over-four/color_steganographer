@@ -54,11 +54,22 @@ take the least significant 3 bits from the colour channel to what is essentially
 This naturally introduces some noise, but is completely invisible at low bit_levels (up to about 4). At 8 bits, the entire underlying image is lost, as 0 bits of colour information are retained in each channel.
 
 ## Space considerations
-As each pixel can contain 3 * bit_level bits of information and the starting sequence takes up 24 bits (end sequence can be omitted), the maximum number of characters you can encode into an image of size width * height is `(width * height * 3 * bit_level)/8 - 24`, rounded down.
+### Calculating required image size
+Given N bytes of text data, the number of pixels this requires is exactly (N * 8) / (3 * bit_level) + 8. The + 8 comes from the message initialisation sequence. For a square image, then, one needs a sqrt((N * 8) / (3 * bit_level) + 8) wide and tall image, dimensions rounded up. For, say, 15kB at bit_level=3, this means a 116 x 116 picture.
 
-For instance, at bit_level 1, a 400 x 400 image can hold (400 * 400 * 3)/8 - 24 = 59976 characters, or about 60 kilobytes of information. Skipping always divides the data capacity by the skipping number.
+The ending sequences can be omitted, so they don't need to be taken into account.
 
-Note that compressing the image after encoding will likely destroy the encoded information as it relies on precise numerical values.
+### Calculating image storage capacity
+Given a W x H image, the data storage capacity without the 10101010-sequences is W * H * 3 * bit_level / skipping bits. Subtracting from it the initial sequence,
+exactly 3 * 8 * bit_level * skipping bits, so we're left with
 
-## Included example
+`(W * H * 3 * bit_level / skipping - 3 * 8 * bit_level * skipping)/8` bytes of storage.
+
+Offsets aren't taken into account, but generally you'd only use offset < skipping. This way, for instance, the absolute maximum storage capacity of a 400 x 400 image is about 480kB, destroying all the colour information.
+
+* Note that compressing the image after encoding will likely destroy the encoded information as it relies on precise numerical values.
+
+## Included examples
 I've encoded something into the `example_encoded.png` that you can test the program on. Simply run `python stegano.py example_encoded.png -d > result.txt` to see what it is.
+
+![Hmm...](pgp.png)
