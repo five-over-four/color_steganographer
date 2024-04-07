@@ -5,6 +5,7 @@ This CLI-script encodes arbitrary text data into the colour channels of an image
 from random import choice
 from itertools import product
 import argparse
+from base64 import b64encode, b64decode
 from math import ceil
 from PIL import Image
 
@@ -245,15 +246,15 @@ def main(argv):
             "msg": ""}
 
     if argv.decode: # -d
-        data["bit_level"], data["skipping"] = \
-            analyze_file(skip_max=calculate_skip(0, "  ", 8, width, height),
-                        print_mode=False,
-                        **data)
-        if data["bit_level"] != -1: # something was found automatically, otherwise get (-1, -1).
+        if any([argv.bitlevel, argv.skipping, argv.offset]): # with -b, -s, or -o
             print(to_ascii(decode_message(**data)))
-
-    elif argv.manual: # -m -b [bitlevel] -s [skipping]
-        print(to_ascii(decode_message(**data)))
+        else: # without extra flags, automatic.
+            data["bit_level"], data["skipping"] = \
+                analyze_file(skip_max=calculate_skip(0, "  ", 8, width, height),
+                            print_mode=False,
+                            **data)
+            if data["bit_level"] != -1: # something was found automatically, otherwise get (-1, -1).
+                print(to_ascii(decode_message(**data)))
 
     elif argv.input: # -i [textfile.txt]
         try:
@@ -291,7 +292,6 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--bitlevel", metavar="BITS_PER_PIXEL", type=int, help="Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.")
     parser.add_argument("-s", "--skipping", metavar="N", type=int, help="Skip all but every Nth pixel in the encoding process. 0 to populate the image evenly (default).")
     parser.add_argument("-o", "--offset", metavar="K", type=int, help="Start encoding at the Kth pixel, allows for multiple messages per image, assuming you use the same skipping number.")
-    parser.add_argument("-m", "--manual", action="store_true", help="Decode with optional manual --bitlevel and --skipping flags (default to 1 and 1).")
     parser.add_argument("-a", "--analyze", action="store_true", help="Tries to automatically find an encoded message and its settings.")
 
     main(parser.parse_args())
