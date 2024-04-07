@@ -8,13 +8,13 @@ Encode your message into `image.png` with the command `python stegano.py image.p
 Decode such a message from `encoded.png` with the command `python stegano.py encoded.png -d`. If the encoded message is very long, it's recommended you pipe the result into a file with the `>` operator; `python stegano.py encoded.png -d > target.txt`.
 
 ## Encoding tweaks
-To use more bits of each colour for the message, use the `-b` or `--bitlevel` flag, with numbers 1-8, 1 being the least bits (most discreet) and 8 being the most extreme (0 bits for colour information!). To offset the encoding by N pixels, use the `-o` or `--offset` flag. To skip all but every Nth pixel (up -> down, then left -> right), use the `-s` or `--skipping` flag. The `-s 0` flag is default functionality, attempting to spread the pixels evenly across the iamge. This can by bypassed with `-s N`.
+To use more bits of each colour for the message, use the `-b` or `--bitlevel` flag, with numbers 1-8, 1 being the least bits (most discreet) and 8 being the most extreme (0 bits for colour information!). To offset the encoding by N pixels, use the `-o N` or `--offset N` flag. To skip all but every Nth pixel (up -> down, then left -> right), use the `-s N` or `--skipping N` flag. The `-s 0` flag is default functionality, attempting to spread the pixels evenly across the iamge. This can by bypassed with `-s N` (`-s 1` to use every pixel).
 
 For instance, to encode the file `source.txt` into `example.png`, storing 4 bits per pixel, and skipping all but every 3rd pixel, you'd use the command
 
 `python stegano.py -i source.txt -b 4 -s 3`.
 
-The program will attempt to automatically detect the message, but you can use the `-m` or `--manual` flag to give decoding instructions: `python stegano.py encoded.png -m -b 4 -s 3`. To encode in each subsequent pixel, just use `-s 1`.
+The program will attempt to automatically detect the message, but you can use the `-m` or `--manual` flag to give decoding instructions: `python stegano.py encoded.png -m -b 4 -s 3`.
 
 ### Encoding multiple messages within one image
 With the skipping number N, it is possible to encode N separate messages by cycling through all integer offsets 0 - (N-1) (or 1 - N), courtesy of modular arithmetic. The automatic decoding feature will not work for images with multiple messages and the analysis will likely find many false positives.
