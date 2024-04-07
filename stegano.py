@@ -5,7 +5,6 @@ This CLI-script encodes arbitrary text data into the colour channels of an image
 from random import choice
 from itertools import product
 import argparse
-from base64 import b64encode, b64decode
 from math import ceil
 from PIL import Image
 
