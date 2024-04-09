@@ -3,17 +3,15 @@ This CLI-tool encodes arbitrary text data into the colour channels of an image.
 """
 
 from random import choice
-from itertools import product
 import argparse
 from math import ceil
+from time import perf_counter
 from PIL import Image
 
 #   #   #   #   #   #   #   #   #   #   #   #   #   # #
 # Basic bin -> ascii and ascii -> bin functions here. #
 #   #   #   #   #   #   #   #   #   #   #   #   #   # #
 
-# TODO: Consider: .zfill(7) contains exactly the same character information
-# as .zfill(8); all printable unicode is below 128.
 def to_bin(s: str) -> str:
     """
     Convert each character in the string into an 8-bit sequence and concatenate.
@@ -34,16 +32,15 @@ def decode_byte(b: str) -> str:
 
 def bit_combinations(power=1, to="decimal") -> dict:
     """
-    Returns the dict translating between 0-255 and their corresponding power-bit strings.
+    Returns dictionary dec -> bin and bin -> dec with binary-len being power.
 
     170 -> "10101010" unless to="decimal", in which case it's "10101010" -> 170.
     27 -> "11011" at power=5, 27 -> "0011011" at power=7.
     """
-    combos = product(["0", "1"], repeat=power)
-    combos = ["".join(x) for x in combos]
+    bits_to_dec = {bin(x)[2:].zfill(power): x for x in range(2**power)}
     if to == "decimal":
-        return {x: i for x,i in zip(combos, range(2**power))}
-    return {i: x for x, i in zip(combos, range(2**power))}
+        return bits_to_dec
+    return {dec: bit for bit, dec in bits_to_dec.items()}
 
 
 def to_ascii(b: str, bit_level: int) -> str:
