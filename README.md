@@ -22,26 +22,24 @@ With the skipping number N, it is possible to encode N separate messages by cycl
 Example: to encode *two* messages, `file1.txt` and `file2.txt`, use `python stegano.py image.png -i file1.txt -s 2 -o 0` and `python stegano.py image.png -i file1.txt -s 2 -o 1` (with optional bit levels) and decode using `python stegano.py encoded.png -d -s 2 -o 0` and `python stegano.py encoded.png -d -s 2 -o 1`. The downside is the reduction of storage per offset channel, you'll have to calculate the storage manually.
 
 ## Help
-    usage: Simple Binary Steganography Tool [-h] [-i TEXTFILE] [-t MESSAGE] [-d] [-b BITS_PER_PIXEL] [-s N] [-o K] [-a]
-                                        filename
+    usage: Steganography Tool [-h] [-i TEXTFILE] [-t MESSAGE] [-d] [-b BITS_PER_PIXEL] [-s N] [-o K] [-a] filename
 
     Encode and decode a message into and from the colour channels of an image.
 
     positional arguments:
-    filename              Name of the image file.
+    filename              Name of an image file.
 
     options:
     -h, --help            show this help message and exit
     -i TEXTFILE, --input TEXTFILE
-                            Encode the contents of a text file into the image.
+                            Contents of this file will be encoded into the image.
     -t MESSAGE, --type MESSAGE
                             Type directly to encode a message into the image file.
     -d, --decode          Read a message from the image file.
     -b BITS_PER_PIXEL, --bitlevel BITS_PER_PIXEL
-                            Store n bits per pixel. Higher = less discreet, as the colours are represented in fewer bits.     
-    -s N, --skipping N    Skip all but every Nth pixel in the encoding process. 0 to populate the image evenly (default).   
-    -o K, --offset K      Start encoding at the Kth pixel, allows for multiple messages per image, assuming you use the     
-                            same skipping number.
+                            Store n bits per pixel. 1-8. Higher = more storage, less discreet, more colour data lost.
+    -s N, --skipping N    Encode to every Nth pixel. 0 to populate the image evenly.
+    -o K, --offset K      Start encoding at the Kth pixel, allows for multiple messages per image, assuming you use the same skipping number (>1).
     -a, --analyze         Tries to automatically find an encoded message and its settings.
 
 ## Method of steganography used
