@@ -5,7 +5,7 @@ This CLI-script encodes arbitrary text data into the colour channels of an image
 from random import choice
 from itertools import product
 import argparse
-from math import ceil, floor
+from math import ceil
 from PIL import Image
 
 #   #   #   #   #   #   #   #   #   #   #   #   #   # #
@@ -58,7 +58,6 @@ def to_ascii(b: str) -> str:
         s += decode_byte(b[pos * 8:pos * 8 + 8])
         pos += 1
     return s
-
 
 #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
 # Helper functions for the logic behind the encoding.   #
@@ -241,16 +240,13 @@ def analyze_file(image: Image.Image, height: int, channels: dict,
             while len(b) < key_len * 2:
                 for ch in ("red", "green", "blue"):
                     (x,y) = (pos // height, pos % height)
-                    try:
-                        modulus = image.getpixel((pos // height, pos % height))[channels[ch]] % (2**bits)
-                    except Exception:
-                        print(x,y)
+                    modulus = image.getpixel((pos // height, pos % height))[channels[ch]] % (2**bits)
                     b += bit_data[modulus]
                 pos += skip_level
             if b[:key_len] == "10"*3*4*bits:
-                msg_len = int(b[key_len:], 2) * (8 / bits)/ 1000
+                msg_len = int(b[key_len:], 2) * bits / (8000)
                 if print_mode:
-                    print(f"{msg_len}kB message detected with bit_level = {bits} and skipping = {skip_level}.")
+                    print(f"{round(msg_len,2)}kB message detected with bit_level = {bits} and skipping = {skip_level}.")
                 return (bits, skip_level)
     if not found:
         print("No message found.")
