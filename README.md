@@ -73,6 +73,6 @@ Offsets aren't taken into account, but generally you'd only use offset < skippin
 * Note that compressing the image after encoding will likely destroy the encoded information as it relies on precise numerical values.
 
 ## Included examples
-I've encoded something into the `example_encoded.png` that you can test the program on. Simply run `python stegano.py example_encoded.png -d > result.txt` to see what it is.
+I've encoded something into the `./resources/example_encoded.png` that you can test the program on. Simply run `python stegano.py example_encoded.png -d > result.txt` to see what it is.
 
 ![Hmm...](./resources/pgp.png)
