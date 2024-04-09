@@ -56,7 +56,7 @@ This naturally introduces some noise, but is completely invisible at low bit_lev
 ### Initialisation sequence
 The first 8 pixels of any encoding are used for a sequence of alternating bits to identify the beginning of a message. The second 8 pixels are used to encode length information about the message, so the program knows where to stop. If you encode an image with bit_level 8, you'll see this as 8 gray/white pixels in the top left, followed by 8 mostly black and then a coloured pixel or two, as below.
 
-![](encoding_pixels.png)
+![](./resources/encoding_pixels.png)
 
 ## Space considerations
 ### Calculating required image size
@@ -75,4 +75,4 @@ Offsets aren't taken into account, but generally you'd only use offset < skippin
 ## Included examples
 I've encoded something into the `example_encoded.png` that you can test the program on. Simply run `python stegano.py example_encoded.png -d > result.txt` to see what it is.
 
-![Hmm...](pgp.png)
+![Hmm...](./resources/pgp.png)
