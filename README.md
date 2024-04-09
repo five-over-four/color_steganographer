@@ -51,7 +51,9 @@ encode bit_level bits of information in each colour channel of each pixel in mod
 
 For example: at bit_level = 3, we're working with 2^3 = mod 8 arithmetic. 0 = "000", 1 = "001", ..., 6 = "110", and 7 = "111". This would
 take the least significant 3 bits from the colour channel to what is essentially random-ish noise and leave 5 to the actual colour data.
-This naturally introduces some noise, but is completely invisible at low bit_levels (up to about 4). At 8 bits, the entire underlying image is lost, as 0 bits of colour information are retained in each channel.
+This naturally introduces some noise, but is completely invisible at low bit_levels (up to about 3-4). At 8 bits, the entire underlying image is lost, as 0 bits of colour information are retained in each channel.
+
+* N.B. *All* printable characters can be represented with 7 bits, and therefore the only functional difference between `-b 8` and `-b 7` is that the former destroys more of the image.
 
 ### Initialisation sequence
 The first 8 pixels of any encoding are used for a sequence of alternating bits to identify the beginning of a message. The second 8 pixels are used to encode length information about the message, so the program knows where to stop. If you encode an image with bit_level 8, you'll see this as 8 gray/white pixels in the top left, followed by 8 mostly black and then a coloured pixel or two, as below.

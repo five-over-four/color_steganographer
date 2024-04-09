@@ -1,5 +1,5 @@
 """
-This CLI-script encodes arbitrary text data into the colour channels of an image.
+This CLI-tool encodes arbitrary text data into the colour channels of an image.
 """
 
 from random import choice
@@ -12,13 +12,15 @@ from PIL import Image
 # Basic bin -> ascii and ascii -> bin functions here. #
 #   #   #   #   #   #   #   #   #   #   #   #   #   # #
 
+# TODO: Consider: .zfill(7) contains exactly the same character information
+# as .zfill(8); all printable unicode is below 128.
 def to_bin(s: str) -> str:
     """
     Convert each character in the string into an 8-bit sequence and concatenate.
 
     'hello' is converted to '0110100001100101011011000110110001101111'.
     """
-    return "".join([ str(bin(ord(char)))[2:].zfill(8) for char in s])
+    return "".join([ bin(ord(char))[2:].zfill(7) for char in s])
 
 
 def decode_byte(b: str) -> str:
@@ -44,7 +46,7 @@ def bit_combinations(power=1, to="decimal") -> dict:
     return {i: x for x, i in zip(combos, range(2**power))}
 
 
-def to_ascii(b: str) -> str:
+def to_ascii(b: str, bit_level: int) -> str:
     """
     Returns a string of characters from a string of bytes.
 
@@ -53,9 +55,11 @@ def to_ascii(b: str) -> str:
     """
     pos = 0
     s = ""
-    max_length = len(b)
-    while pos * 8 < max_length:
-        s += decode_byte(b[pos * 8:pos * 8 + 8])
+    max_len = len(b)
+    # special case: 7 bits can encode all printable characters.
+    char_len = 7 if bit_level == 7 else 8
+    while pos * char_len < max_len:
+        s += decode_byte(b[pos * char_len:pos * char_len + char_len])
         pos += 1
     return s
 
@@ -137,7 +141,7 @@ def encode_message(image: Image.Image, msg: str, width: int, height: int, channe
     binary = to_bin(msg)
     msg_length = 3*8*bit_level*2 + len(binary) # total len in binary.
 
-    # if the message overfloweth, then the message you shalt rend asunder with thine most
+    # if the message overfloweth, then the message you shall rend asunder with thine most
     # unholy calculus proffered hereunder.
     if ceil(msg_length / bit_level) > width * height * 3 / skipping - offset * 3 - 48:
         length_data = bin(ceil(width * height * 3 / skipping - 48))[2:].zfill(3*8*bit_level)
@@ -217,9 +221,9 @@ def decode_message(image: Image.Image, height: int, channels: dict,
             b += bit_data[modulus]
             colour_pos += 1
             if colour_pos >= msg_len:
-                return to_ascii(b)
+                return to_ascii(b, bit_level)
         pos += skipping
-    return to_ascii(b)
+    return to_ascii(b, bit_level)
 
 
 def analyze_file(image: Image.Image, height: int, channels: dict,
