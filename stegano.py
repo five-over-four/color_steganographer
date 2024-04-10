@@ -4,7 +4,7 @@ This CLI-tool encodes arbitrary text data into the colour channels of an image.
 
 from random import choice
 import argparse
-from math import ceil, log2
+from math import ceil
 from PIL import Image
 
 #   #   #   #   #   #   #   #   #   #   #   #   #   # #
@@ -232,11 +232,11 @@ def decode_message(image: Image.Image, height: int, channels: dict,
             b += bit_data[modulus]
             colour_pos += 1
             if colour_pos >= msg_len: # finished mid-pixel.
-                if log2(bit_level) // 1 == log2(bit_level):
+                if bit_level in (1,2,4,8):
                     return to_ascii(b, bit_level)
                 return to_ascii_slow(b, bit_level)
         pos += skipping
-    if log2(bit_level) // 1 == log2(bit_level):
+    if bit_level in (1,2,4,8):
         return to_ascii(b, bit_level)
     return to_ascii_slow(b, bit_level)
 
