@@ -95,9 +95,8 @@ Given $N$ bytes of text data, the number of pixels this requires is exactly $$\f
 Given a $W \times H$ image, the data storage capacity without the initialisation sequences is 
 $\frac{3WH\cdot\text{bitlevel}}{\text{skipping}}$ bits. Subtracting from it the initial sequence, $3\cdot16\cdot\text{bitlevel}\cdot\text{skipping}$ bits, we're left with
 
-$$
-\frac{3\cdot\text{bitlevel}}{8}\left\lbrack\frac{W\cdot H}{S} - 16\cdot S - \text{offset}\right\rbrack
-$$
+$$\frac{3\cdot\text{bitlevel}}{8}\left\lbrack\frac{W\cdot H}{S} - 16\cdot S - \text{offset}\right\rbrack$$
+
 bytes of storage. This way, for instance, the absolute maximum storage capacity of a 400 x 400 image is about 60kB, destroying all the colour information.
 
 ***Note that compressing the image after encoding will likely destroy the encoded information as it relies on precise numerical values.***
