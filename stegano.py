@@ -17,8 +17,7 @@ def to_bin(s: str, bit_level) -> str:
 
     'hello' is converted to '0110100001100101011011000110110001101111'.
     """
-    fill = 8 if bit_level != 7 else 7
-    return "".join([ bin(ord(char))[2:].zfill(fill) for char in s])
+    return "".join([ bin(ord(char))[2:].zfill(8) for char in s])
 
 def to_ascii(b: str) -> str:
     """
@@ -256,11 +255,13 @@ def main(argv: argparse.Namespace) -> None:
     Argument handling and data validation for user input.
     """
 
-    # just some global vars and validation. bit messy.
     try:
         image = Image.open(argv.filename).convert("RGB")
     except FileNotFoundError:
         print(f"No file '{argv.filename}' found.")
+        return
+    except Image.UnidentifiedImageError:
+        print(f"Incorrect file format for '{argv.filename}'.")
         return
     width, height = image.size
     channels = {"red": 0, "green": 1, "blue": 2}
@@ -270,6 +271,10 @@ def main(argv: argparse.Namespace) -> None:
     bit_level = bit_level if (8 >= bit_level > 0) else 1
     skipping =  skipping if (skipping > 0) else 1
     offset = offset if (offset >= 0) else 0
+
+    # temporary, will fix bug.
+    if bit_level not in (1,2,4,8):
+        bit_level = 1
 
     if argv.decode: # -d
         if any([argv.bitlevel, argv.skipping, argv.offset]): # with -b, -s, or -o
