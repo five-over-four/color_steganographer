@@ -290,9 +290,9 @@ def main(argv: argparse.Namespace) -> None:
         return
     width, height = image.size
     channels = {"red": 0, "green": 1, "blue": 2}
-    bit_level = argv.bitlevel or 1
-    skipping = argv.skipping or 1
-    offset = argv.offset or 0
+    bit_level = int(argv.bitlevel) or 1
+    skipping = int(argv.skipping) or 1
+    offset = int(argv.offset) or 0
     bit_level = bit_level if (8 >= bit_level > 0) else 1
     skipping =  skipping if (skipping > 0) else 1
     offset = offset if (offset >= 0) else 0
