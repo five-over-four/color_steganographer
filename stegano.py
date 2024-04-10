@@ -131,7 +131,7 @@ def encode_message(image: Image.Image, msg: str, width: int, height: int, channe
     binary = to_bin(msg, bit_level)
     msg_length = 3*8*bit_level*2 + len(binary) # total len in binary.
 
-    # if the message over bounds doth wonder, 
+    # if the message over bounds doth wander, 
     # then the message you shalt rend asunder 
     # with unholy calculus proffered hereunder.
     if ceil(msg_length / bit_level) > width * height * 3 / skipping - offset * 3 - 48:
