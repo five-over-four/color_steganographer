@@ -4,20 +4,22 @@ This CLI-tool encodes arbitrary text data into the colour channels of an image.
 
 from random import choice
 import argparse
-from math import ceil
+from math import ceil, log2
 from PIL import Image
 
 #   #   #   #   #   #   #   #   #   #   #   #   #   # #
 # Basic bin -> ascii and ascii -> bin functions here. #
 #   #   #   #   #   #   #   #   #   #   #   #   #   # #
 
-def to_bin(s: str, bit_level) -> str:
+def to_bin(s: str, bit_level: int) -> str:
     """
     Convert each character in the string into an 8-bit sequence and concatenate.
 
     'hello' is converted to '0110100001100101011011000110110001101111'.
     """
-    return "".join([ bin(ord(char))[2:].zfill(8) for char in s])
+    fill = 7 if bit_level == 7 else 8
+    return "".join([ bin(ord(char))[2:].zfill(fill) for char in s])
+
 
 def to_ascii(b: str) -> str:
     """
@@ -28,6 +30,25 @@ def to_ascii(b: str) -> str:
     """
     n = int(b, 2)
     return n.to_bytes((n.bit_length() + 7) // 8, 'big').decode()
+
+
+def to_ascii_slow(b: str, bit_level: int) -> str:
+    """
+    For when bit_level is not a power of 2. The other method is significantly faster
+    but cannot deal with those situations.
+
+    '0110100001100101011011000110110001101111' converts to 'hello'.
+    The inverse operation of to_bin.
+    """
+    pos = 0
+    s = ""
+    max_len = len(b)
+    # special case: 7 bits can encode all printable characters.
+    char_len = 7 if bit_level == 7 else 8
+    while pos * char_len < max_len:
+        s += decode_byte(b[pos * char_len:pos * char_len + char_len])
+        pos += 1
+    return s
 
 
 def decode_byte(b: str) -> str:
@@ -210,10 +231,14 @@ def decode_message(image: Image.Image, height: int, channels: dict,
             modulus = pixel[channels[ch]] % (2**bit_level)
             b += bit_data[modulus]
             colour_pos += 1
-            if colour_pos >= msg_len:
-                return to_ascii(b)
+            if colour_pos >= msg_len: # finished mid-pixel.
+                if log2(bit_level) // 1 == log2(bit_level):
+                    return to_ascii(b, bit_level)
+                return to_ascii_slow(b, bit_level)
         pos += skipping
-    return to_ascii(b)
+    if log2(bit_level) // 1 == log2(bit_level):
+        return to_ascii(b, bit_level)
+    return to_ascii_slow(b, bit_level)
 
 
 def analyze_file(image: Image.Image, height: int, channels: dict,
@@ -271,10 +296,6 @@ def main(argv: argparse.Namespace) -> None:
     bit_level = bit_level if (8 >= bit_level > 0) else 1
     skipping =  skipping if (skipping > 0) else 1
     offset = offset if (offset >= 0) else 0
-
-    # temporary, will fix bug.
-    if bit_level not in (1,2,4,8):
-        bit_level = 1
 
     if argv.decode: # -d
         if any([argv.bitlevel, argv.skipping, argv.offset]): # with -b, -s, or -o
