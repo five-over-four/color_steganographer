@@ -5,6 +5,7 @@ This CLI-tool encodes arbitrary text data into the colour channels of an image.
 from random import choice
 import argparse
 from math import ceil
+from time import perf_counter_ns
 from PIL import Image
 
 #   #   #   #   #   #   #   #   #   #   #   #   #   # #
@@ -21,7 +22,7 @@ def to_bin(s: str, bit_level: int) -> str:
     return "".join([ bin(ord(char))[2:].zfill(fill) for char in s])
 
 
-def to_ascii(b: str) -> str:
+def to_ascii(b: str, bit_level: int) -> str:
     """
     Returns a string of characters from a string of bytes.
 
@@ -223,7 +224,7 @@ def decode_message(image: Image.Image, height: int, channels: dict,
 
     pos = 16 * skipping + offset
     colour_pos = 0
-
+    first = perf_counter_ns()
     while colour_pos < msg_len:
         (x, y) = pos // height, pos % height
         pixel = image.getpixel((x, y))
@@ -232,9 +233,7 @@ def decode_message(image: Image.Image, height: int, channels: dict,
             b += bit_data[modulus]
             colour_pos += 1
             if colour_pos >= msg_len: # finished mid-pixel.
-                if bit_level in (1,2,4,8):
-                    return to_ascii(b, bit_level)
-                return to_ascii_slow(b, bit_level)
+                break
         pos += skipping
     if bit_level in (1,2,4,8):
         return to_ascii(b, bit_level)
@@ -293,9 +292,15 @@ def main(argv: argparse.Namespace) -> None:
     bit_level = argv.bitlevel or 1
     skipping = argv.skipping or 1
     offset = argv.offset or 0
-    bit_level = bit_level if (0 < bit_level <= 8) else 1
-    skipping =  skipping if (skipping >= 0) else 1
-    offset = offset if (offset >= 0) else 0
+    if not (0 < bit_level <= 8):
+        print(f"Invalid bitlevel: {bit_level}; bitlevel 1 used.")
+        bit_level = 1
+    if skipping < 0:
+        print(f"Invalid skipping: {skipping}; skipping 1 used.")
+        skipping = 1
+    if offset < 0:
+        print(f"Invalid offset: {offset}; offset 0 used.")
+        offset = 0
 
     if argv.decode: # -d
         if any([argv.bitlevel, argv.skipping, argv.offset]): # with -b, -s, or -o
