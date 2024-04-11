@@ -133,6 +133,17 @@ def convert_img_len_data(numbers, bit_level: int) -> int:
     return int(bytes(binary, "utf-8"), 2)
 
 
+# TODO: remove as redundant.
+def prune_binary(b: str, bit_level: int) -> str:
+    """
+    Fix unprintable characters due to partial character encodes.
+    """
+    end = len(b)
+    if bit_level == 7:
+        return b[:end - (end % 7)]
+    return b[:end - (end % 8)]
+
+
 #   #   #   #   #   #   #   #   #   #   #   #   #   #   #    #  #
 # IO functions that deal with the actual encoding and decoding. #
 #   #   #   #   #   #   #   #   #   #   #   #   #   #   #    #  #
@@ -154,14 +165,13 @@ def encode_message(image: Image.Image, msg: str, width: int, height: int, channe
     # if the message over bounds doth wander,
     # then the message you shalt rend asunder
     # with unholy calculus proffered hereunder.
-    if ceil(msg_length / (3*bit_level)) > width * height / skipping - offset:
-        length_data = bin(floor((width * height / skipping - offset - 16) * 3))
+    if ceil(msg_length / (3*bit_level)) > width * height / skipping - offset: 
+        length_data = bin(ceil(width * height / skipping - offset - 16) * 3)
     else:
         length_data = bin(ceil(msg_length / bit_level - 48))
-    length_data = length_data[2:].zfill(3*8*bit_level)
 
     # 8 pixels of padding and 8 pixels of message length information at start.
-    msg = "10"*3*4*bit_level + length_data + binary
+    msg = "10"*3*4*bit_level + length_data[2:].zfill(3*8*bit_level) + binary
     bit_data = bit_combinations(bit_level, to="decimal")
 
     while msg_length % bit_level != 0:
@@ -177,7 +187,7 @@ def encode_message(image: Image.Image, msg: str, width: int, height: int, channe
             x, y = pos // height, pos % height
             percent_done = 100 * (msg_pos - 3*8*bit_level*2) / (msg_length - 3*8*bit_level*2)
 
-            if pos >= (width * height - skipping) and percent_done < 100:
+            if pos >= width * height and percent_done < 100:
                 image.save("encoded.png")
                 return f"Couldn't fit entire message in image " \
                        f"({round(percent_done, 1)} % completed.)"
@@ -234,6 +244,7 @@ def decode_message(image: Image.Image, height: int, channels: dict,
             if colour_pos >= msg_len: # finished mid-pixel.
                 break
         pos += skipping
+    b = prune_binary(b, bit_level)
     if bit_level in (1,2,4,8):
         return to_ascii(b)
     return to_ascii_slow(b, bit_level)
