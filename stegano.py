@@ -4,8 +4,7 @@ This CLI-tool encodes arbitrary text data into the colour channels of an image.
 
 from random import choice
 import argparse
-from math import ceil
-from time import perf_counter_ns
+from math import ceil, floor
 from PIL import Image
 
 #   #   #   #   #   #   #   #   #   #   #   #   #   # #
@@ -22,9 +21,9 @@ def to_bin(s: str, bit_level: int) -> str:
     return "".join([ bin(ord(char))[2:].zfill(fill) for char in s])
 
 
-def to_ascii(b: str, bit_level: int) -> str:
+def to_ascii(b: str) -> str:
     """
-    Returns a string of characters from a string of bytes.
+    Returns a string from a string of bytes.
 
     '0110100001100101011011000110110001101111' converts to 'hello'.
     The inverse operation of to_bin.
@@ -35,7 +34,7 @@ def to_ascii(b: str, bit_level: int) -> str:
 
 def to_ascii_slow(b: str, bit_level: int) -> str:
     """
-    For when bit_level is not a power of 2. The other method is significantly faster
+    For when bit_level is not a power of 2. to_ascii is significantly faster
     but cannot deal with those situations.
 
     '0110100001100101011011000110110001101111' converts to 'hello'.
@@ -152,13 +151,14 @@ def encode_message(image: Image.Image, msg: str, width: int, height: int, channe
     binary = to_bin(msg, bit_level)
     msg_length = 3*8*bit_level*2 + len(binary) # total len in binary.
 
-    # if the message over bounds doth wander, 
-    # then the message you shalt rend asunder 
+    # if the message over bounds doth wander,
+    # then the message you shalt rend asunder
     # with unholy calculus proffered hereunder.
-    if ceil(msg_length / bit_level) > width * height * 3 / skipping - offset * 3 - 48:
-        length_data = bin(ceil(width * height * 3 / skipping - 48))[2:].zfill(3*8*bit_level)
+    if ceil(msg_length / (3*bit_level)) > width * height / skipping - offset:
+        length_data = bin(floor((width * height / skipping - offset - 16) * 3))
     else:
-        length_data = bin(ceil(msg_length / bit_level - 48))[2:].zfill(3*8*bit_level)
+        length_data = bin(ceil(msg_length / bit_level - 48))
+    length_data = length_data[2:].zfill(3*8*bit_level)
 
     # 8 pixels of padding and 8 pixels of message length information at start.
     msg = "10"*3*4*bit_level + length_data + binary
@@ -224,7 +224,6 @@ def decode_message(image: Image.Image, height: int, channels: dict,
 
     pos = 16 * skipping + offset
     colour_pos = 0
-    first = perf_counter_ns()
     while colour_pos < msg_len:
         (x, y) = pos // height, pos % height
         pixel = image.getpixel((x, y))
@@ -236,7 +235,7 @@ def decode_message(image: Image.Image, height: int, channels: dict,
                 break
         pos += skipping
     if bit_level in (1,2,4,8):
-        return to_ascii(b, bit_level)
+        return to_ascii(b)
     return to_ascii_slow(b, bit_level)
 
 
@@ -292,7 +291,7 @@ def main(argv: argparse.Namespace) -> None:
     bit_level = argv.bitlevel or 1
     skipping = argv.skipping or 1
     offset = argv.offset or 0
-    if not (0 < bit_level <= 8):
+    if not 0 < bit_level <= 8:
         print(f"Invalid bitlevel: {bit_level}; bitlevel 1 used.")
         bit_level = 1
     if skipping < 0:
