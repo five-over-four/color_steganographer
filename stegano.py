@@ -133,10 +133,9 @@ def convert_img_len_data(numbers, bit_level: int) -> int:
     return int(bytes(binary, "utf-8"), 2)
 
 
-# TODO: remove as redundant.
 def prune_binary(b: str, bit_level: int) -> str:
     """
-    Fix unprintable characters due to partial character encodes.
+    Cut out incomplete bytes from a string of bits to fix unprintability errors.
     """
     end = len(b)
     if bit_level == 7:
@@ -174,7 +173,7 @@ def encode_message(image: Image.Image, msg: str, width: int, height: int, channe
     msg = "10"*3*4*bit_level + length_data[2:].zfill(3*8*bit_level) + binary
     bit_data = bit_combinations(bit_level, to="decimal")
 
-    while msg_length % bit_level != 0:
+    while msg_length % bit_level != 0: # only exists for row 190.
         msg += "0"
         msg_length += 1
 
